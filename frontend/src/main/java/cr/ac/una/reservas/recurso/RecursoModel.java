@@ -1,0 +1,48 @@
+package cr.ac.una.reservas.recurso;
+
+import cr.ac.una.reservas.categoria.Categoria;
+import cr.ac.una.reservas.ui.AbstractModel;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class RecursoModel extends AbstractModel {
+
+    public static final String PROP_RECURSOS = "recursos";
+    public static final String PROP_RECURSO_SELECCIONADO = "recursoSeleccionado";
+    public static final String PROP_CATEGORIAS_DISPONIBLES = "categoriasDisponibles";
+
+    private List<Recurso> recursos = new ArrayList<>();
+    private Recurso recursoSeleccionado;
+    private List<Categoria> categoriasDisponibles = new ArrayList<>();
+
+    public List<Recurso> getRecursos() {
+        return recursos;
+    }
+
+    public void setRecursos(List<Recurso> nuevaLista) {
+        List<Recurso> anterior = this.recursos;
+        this.recursos = nuevaLista;
+        notificarCambioForzado(PROP_RECURSOS, anterior, nuevaLista);
+    }
+
+    public Recurso getRecursoSeleccionado() {
+        return recursoSeleccionado;
+    }
+
+    public void setRecursoSeleccionado(Recurso nuevo) {
+        Recurso anterior = this.recursoSeleccionado;
+        this.recursoSeleccionado = nuevo;
+        notificarCambio(PROP_RECURSO_SELECCIONADO, anterior, nuevo);
+    }
+
+    public List<Categoria> getCategoriasDisponibles() {
+        return categoriasDisponibles;
+    }
+
+    public void setCategoriasDisponibles(List<Categoria> nuevaLista) {
+        List<Categoria> anterior = this.categoriasDisponibles;
+        this.categoriasDisponibles = nuevaLista;
+        notificarCambioForzado(PROP_CATEGORIAS_DISPONIBLES, anterior, nuevaLista);
+    }
+}

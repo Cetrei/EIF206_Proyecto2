@@ -1,0 +1,418 @@
+package cr.ac.una.reservas.ia;
+
+import cr.ac.una.reservas.backend.BackendServiceFactory;
+import cr.ac.una.reservas.categoria.Categoria;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class GeminiExtractorReserva implements ExtractorReserva {
+
+    private static final String URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+
+    private static final ConfiguracionModeloGemini[] CADENA_MODELOS_GRATUITOS = {
+            new ConfiguracionModeloGemini("gemini-3-flash-preview", "\"thinkingConfig\":{\"thinkingLevel\":\"minimal\"}"),
+            new ConfiguracionModeloGemini("gemini-2.5-flash-lite", "\"thinkingConfig\":{\"thinkingBudget\":0}")
+    };
+
+    private static final String MODELO_POR_DEFECTO = CADENA_MODELOS_GRATUITOS[0].modelo;
+
+    private final HttpClient cliente;
+    private final String apiKey;
+    private final String modelo;
+    private final boolean modeloFijadoExplicitamente;
+
+    public GeminiExtractorReserva() {
+        this(obtenerApiKeyConfigurada(), obtenerModeloConfigurado());
+    }
+
+    public GeminiExtractorReserva(String apiKey, String modelo) {
+        this.apiKey = apiKey;
+        this.modeloFijadoExplicitamente = modelo != null && !modelo.trim().isEmpty();
+        this.modelo = modeloFijadoExplicitamente ? modelo.trim() : MODELO_POR_DEFECTO;
+        this.cliente = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    }
+
+    public boolean estaConfigurado() {
+        return apiKey != null && !apiKey.trim().isEmpty();
+    }
+
+    private static final class ConfiguracionModeloGemini {
+        private final String modelo;
+        private final String fragmentoGenerationConfig;
+
+        private ConfiguracionModeloGemini(String modelo, String fragmentoGenerationConfig) {
+            this.modelo = modelo;
+            this.fragmentoGenerationConfig = fragmentoGenerationConfig;
+        }
+    }
+
+    @Override
+    public DatosReservaExtraidos extraer(String frase, List<Categoria> categoriasDisponibles) {
+        if (frase == null || frase.trim().isEmpty()) {
+            return new DatosReservaExtraidos();
+        }
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalStateException("No se configuro la variable de entorno GEMINI_API_KEY.");
+        }
+
+        String prompt = construirPrompt(frase, categoriasDisponibles);
+        ConfiguracionModeloGemini[] candidatos = obtenerCandidatosDeModelo();
+
+        IllegalStateException ultimoFallo = null;
+        for (ConfiguracionModeloGemini candidato : candidatos) {
+            try {
+                return intentarExtraccionConModelo(candidato, prompt, categoriasDisponibles);
+            } catch (IllegalStateException excepcion) {
+                ultimoFallo = excepcion;
+            }
+        }
+        throw ultimoFallo;
+    }
+
+    private ConfiguracionModeloGemini[] obtenerCandidatosDeModelo() {
+        if (modeloFijadoExplicitamente) {
+            return new ConfiguracionModeloGemini[]{
+                    new ConfiguracionModeloGemini(modelo, "\"thinkingConfig\":{\"thinkingBudget\":0}")
+            };
+        }
+        return CADENA_MODELOS_GRATUITOS;
+    }
+
+    private DatosReservaExtraidos intentarExtraccionConModelo(
+            ConfiguracionModeloGemini candidato, String prompt, List<Categoria> categoriasDisponibles
+    ) {
+        String cuerpo = construirCuerpo(prompt, candidato.fragmentoGenerationConfig);
+
+        HttpRequest solicitud = HttpRequest.newBuilder()
+                .uri(URI.create(URL_BASE + candidato.modelo + ":generateContent"))
+                .timeout(Duration.ofSeconds(25))
+                .header("Content-Type", "application/json")
+                .header("x-goog-api-key", apiKey)
+                .POST(HttpRequest.BodyPublishers.ofString(cuerpo, StandardCharsets.UTF_8))
+                .build();
+
+        try {
+            HttpResponse<String> respuesta = cliente.send(solicitud, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+            if (respuesta.statusCode() < 200 || respuesta.statusCode() >= 300) {
+                throw new IllegalStateException(
+                        "Gemini (" + candidato.modelo + ") respondio con codigo HTTP " + respuesta.statusCode()
+                                + ": " + resumirCuerpoError(respuesta.body())
+                );
+            }
+
+            String jsonDelModelo = extraerTextoRespuesta(respuesta.body());
+            return convertirRespuesta(jsonDelModelo, categoriasDisponibles);
+
+        } catch (InterruptedException excepcion) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(
+                    "La solicitud a Gemini (" + candidato.modelo + ") fue interrumpida.", excepcion
+            );
+        } catch (Exception excepcion) {
+            if (excepcion instanceof IllegalStateException) {
+                throw (IllegalStateException) excepcion;
+            }
+            throw new IllegalStateException(
+                    "No se pudo conectar con Gemini (" + candidato.modelo + ": "
+                            + excepcion.getClass().getSimpleName()
+                            + (excepcion.getMessage() != null ? ": " + excepcion.getMessage() : "") + ").",
+                    excepcion
+            );
+        }
+    }
+
+    private String resumirCuerpoError(String cuerpo) {
+        if (cuerpo == null || cuerpo.isBlank()) {
+            return "sin detalle en el cuerpo de la respuesta.";
+        }
+
+        Pattern patronMensaje = Pattern.compile("\"message\"\\s*:\\s*\"((?:\\\\.|[^\\\"\\\\])*)\"");
+        Matcher matcher = patronMensaje.matcher(cuerpo);
+        if (matcher.find()) {
+            return desescaparJson(matcher.group(1)).trim();
+        }
+
+        String recortado = cuerpo.trim();
+        return recortado.length() > 200 ? recortado.substring(0, 200) + "..." : recortado;
+    }
+
+    private String construirPrompt(String frase, List<Categoria> categoriasDisponibles) {
+        StringBuilder categorias = new StringBuilder();
+        if (categoriasDisponibles != null) {
+            for (Categoria categoria : categoriasDisponibles) {
+                if (categoria == null) {
+                    continue;
+                }
+                categorias.append("- id=").append(categoria.getId())
+                        .append(", descripcion=").append(categoria.getDescripcion())
+                        .append("\n");
+            }
+        }
+
+        return "Extrae los datos de una solicitud de reserva.\n"
+                + "Fecha actual: " + LocalDate.now() + ".\n"
+                + "Devuelve UNICAMENTE un objeto JSON, sin markdown ni explicaciones.\n"
+                + "Usa exactamente estas claves:\n"
+                + "actividad, fecha, horaInicio, horaFin, categorias.\n"
+                + "fecha debe tener formato yyyy-MM-dd.\n"
+                + "horaInicio y horaFin deben tener formato HH:mm.\n"
+                + "categorias debe ser un arreglo que contenga UNICAMENTE ids de la lista disponible.\n"
+                + "Si no puedes identificar un dato, usa null. "
+                + "Si no identificas categorias, usa [].\n"
+                + "Categorias disponibles:\n"
+                + categorias
+                + "Frase del usuario:\n"
+                + frase;
+    }
+
+    private String construirCuerpo(String prompt, String fragmentoGenerationConfig) {
+        return "{"
+                + "\"contents\":[{\"parts\":[{\"text\":\"" + escaparJson(prompt) + "\"}]}],"
+                + "\"generationConfig\":{" + fragmentoGenerationConfig + "}"
+                + "}";
+    }
+
+    private String extraerTextoRespuesta(String respuestaJson) {
+        List<String> textosDeRespuesta = extraerTextosDePartsNoPensamiento(respuestaJson);
+        if (textosDeRespuesta.isEmpty()) {
+            throw new IllegalStateException("Gemini no devolvio contenido de texto.");
+        }
+
+        for (String texto : textosDeRespuesta) {
+            if (pareceObjetoJsonDeReserva(texto)) {
+                return texto;
+            }
+        }
+        return textosDeRespuesta.get(textosDeRespuesta.size() - 1);
+    }
+
+    private List<String> extraerTextosDePartsNoPensamiento(String respuestaJson) {
+        List<String> textos = new ArrayList<>();
+        Pattern patronCampo = Pattern.compile(
+                "\\\"(text|thought)\\\"\\s*:\\s*(true|false|\\\"((?:\\\\.|[^\\\"\\\\])*)\\\")"
+        );
+        Matcher matcher = patronCampo.matcher(respuestaJson);
+
+        String textoPendiente = null;
+        boolean pensamientoPendiente = false;
+
+        while (matcher.find()) {
+            String nombreCampo = matcher.group(1);
+            if ("text".equals(nombreCampo)) {
+                if (textoPendiente != null && !pensamientoPendiente) {
+                    textos.add(textoPendiente);
+                }
+                textoPendiente = desescaparJson(matcher.group(3)).trim();
+                pensamientoPendiente = false;
+            } else {
+                pensamientoPendiente = "true".equals(matcher.group(2));
+            }
+        }
+
+        if (textoPendiente != null && !pensamientoPendiente && !textoPendiente.isEmpty()) {
+            textos.add(textoPendiente);
+        }
+        return textos;
+    }
+
+    private boolean pareceObjetoJsonDeReserva(String texto) {
+        return texto.contains("\"actividad\"")
+                || texto.contains("\"categorias\"")
+                || texto.contains("\"idsCategoriasIdentificadas\"");
+    }
+
+    private DatosReservaExtraidos convertirRespuesta(String json, List<Categoria> categoriasDisponibles) {
+        DatosReservaExtraidos datos = new DatosReservaExtraidos();
+
+        datos.setActividad(leerCampoTexto(json, "actividad"));
+        datos.setFecha(parsearFecha(leerCampoTexto(json, "fecha")));
+        datos.setHoraInicio(parsearHora(leerCampoTexto(json, "horaInicio")));
+        datos.setHoraFin(parsearHora(leerCampoTexto(json, "horaFin")));
+
+        List<String> categorias = leerArregloTexto(json, "categorias");
+        if (categorias.isEmpty()) {
+            categorias = leerArregloTexto(json, "idsCategoriasIdentificadas");
+        }
+        datos.setIdsCategoriasIdentificadas(resolverCategorias(categorias, categoriasDisponibles));
+
+        return datos;
+    }
+
+    private String leerCampoTexto(String json, String campo) {
+        Pattern patron = Pattern.compile(
+                "\\\"" + Pattern.quote(campo) + "\\\"\\s*:\\s*(null|\\\"((?:\\\\.|[^\\\"\\\\])*)\\\")",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher matcher = patron.matcher(json);
+        if (!matcher.find() || "null".equalsIgnoreCase(matcher.group(1))) {
+            return null;
+        }
+        return desescaparJson(matcher.group(2));
+    }
+
+    private List<String> leerArregloTexto(String json, String campo) {
+        List<String> valores = new ArrayList<>();
+        Pattern patronArreglo = Pattern.compile(
+                "\\\"" + Pattern.quote(campo) + "\\\"\\s*:\\s*\\[(.*?)]",
+                Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+        );
+        Matcher arreglo = patronArreglo.matcher(json);
+        if (!arreglo.find()) {
+            return valores;
+        }
+
+        Pattern patronValor = Pattern.compile("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"");
+        Matcher valor = patronValor.matcher(arreglo.group(1));
+        while (valor.find()) {
+            valores.add(desescaparJson(valor.group(1)));
+        }
+        return valores;
+    }
+
+    private List<Integer> resolverCategorias(List<String> valores, List<Categoria> categoriasDisponibles) {
+        List<Integer> ids = new ArrayList<>();
+        Set<Integer> agregados = new HashSet<>();
+
+        if (categoriasDisponibles == null) {
+            return ids;
+        }
+
+        for (String valor : valores) {
+            if (valor == null) {
+                continue;
+            }
+            for (Categoria categoria : categoriasDisponibles) {
+                if (categoria == null || categoria.getId() == null) {
+                    continue;
+                }
+                boolean coincideId = String.valueOf(categoria.getId()).equals(valor.trim());
+                boolean coincideDescripcion = categoria.getDescripcion() != null
+                        && categoria.getDescripcion().equalsIgnoreCase(valor.trim());
+
+                if ((coincideId || coincideDescripcion) && agregados.add(categoria.getId())) {
+                    ids.add(categoria.getId());
+                }
+            }
+        }
+        return ids;
+    }
+
+    private LocalDate parsearFecha(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(texto.trim());
+        } catch (DateTimeParseException excepcion) {
+            return null;
+        }
+    }
+
+    private LocalTime parsearHora(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(texto.trim());
+        } catch (DateTimeParseException excepcion) {
+            return null;
+        }
+    }
+
+    private static String obtenerApiKeyConfigurada() {
+        Optional<ConfiguracionIa> configuracion = obtenerConfiguracionIaService().obtenerConfiguracion();
+        if (configuracion.isPresent() && configuracion.get().getApiKey() != null && !configuracion.get().getApiKey().isBlank()) {
+            return configuracion.get().getApiKey();
+        }
+        return System.getenv("GEMINI_API_KEY");
+    }
+
+    private static String obtenerModeloConfigurado() {
+        Optional<ConfiguracionIa> configuracion = obtenerConfiguracionIaService().obtenerConfiguracion();
+        if (configuracion.isPresent() && configuracion.get().getModelo() != null && !configuracion.get().getModelo().isBlank()) {
+            return configuracion.get().getModelo();
+        }
+        return System.getenv("GEMINI_MODEL");
+    }
+
+    private static ConfiguracionIaService obtenerConfiguracionIaService() {
+        return BackendServiceFactory.obtenerConfiguracionIaService();
+    }
+
+    private String escaparJson(String texto) {
+        return texto
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    private String desescaparJson(String texto) {
+        StringBuilder resultado = new StringBuilder();
+
+        for (int i = 0; i < texto.length(); i++) {
+            char actual = texto.charAt(i);
+            if (actual != '\\' || i + 1 >= texto.length()) {
+                resultado.append(actual);
+                continue;
+            }
+
+            char siguiente = texto.charAt(++i);
+            switch (siguiente) {
+                case '"':
+                    resultado.append('"');
+                    break;
+                case '\\':
+                    resultado.append('\\');
+                    break;
+                case '/':
+                    resultado.append('/');
+                    break;
+                case 'b':
+                    resultado.append('\b');
+                    break;
+                case 'f':
+                    resultado.append('\f');
+                    break;
+                case 'n':
+                    resultado.append('\n');
+                    break;
+                case 'r':
+                    resultado.append('\r');
+                    break;
+                case 't':
+                    resultado.append('\t');
+                    break;
+                case 'u':
+                    if (i + 4 >= texto.length()) {
+                        throw new IllegalStateException("Respuesta JSON invalida.");
+                    }
+                    String hexadecimal = texto.substring(i + 1, i + 5);
+                    resultado.append((char) Integer.parseInt(hexadecimal, 16));
+                    i += 4;
+                    break;
+                default:
+                    resultado.append(siguiente);
+                    break;
+            }
+        }
+        return resultado.toString();
+    }
+}
