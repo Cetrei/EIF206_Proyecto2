@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.autenticacion;
 
+import cr.ac.una.reservas.excepcion.CredencialesInvalidasException;
 import cr.ac.una.reservas.excepcion.ReglaDeNegocioException;
 import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.persistence.falso.AdministradorDaoFalso;
@@ -49,13 +50,13 @@ class AutenticacionServiceTest {
 
     @Test
     void rechazaClaveIncorrecta() {
-        assertThrows(ReglaDeNegocioException.class,
+        assertThrows(CredencialesInvalidasException.class,
                 () -> autenticacionService.autenticar(ID_FUNCIONARIO_PRUEBA, "clave-incorrecta"));
     }
 
     @Test
     void rechazaIdInexistente() {
-        assertThrows(ReglaDeNegocioException.class,
+        assertThrows(CredencialesInvalidasException.class,
                 () -> autenticacionService.autenticar("no-existe", CLAVE_PRUEBA));
     }
 
@@ -69,7 +70,7 @@ class AutenticacionServiceTest {
 
     @Test
     void rechazaCambioDeClaveConClaveActualIncorrecta() {
-        assertThrows(ReglaDeNegocioException.class,
+        assertThrows(CredencialesInvalidasException.class,
                 () -> autenticacionService.cambiarClave(ID_ADMIN_PRUEBA, "clave-incorrecta", "otra-clave"));
     }
 
@@ -83,7 +84,7 @@ class AutenticacionServiceTest {
 
     @Test
     void rechazaCambioDeClaveDeUnUsuarioInexistente() {
-        assertThrows(ReglaDeNegocioException.class,
+        assertThrows(CredencialesInvalidasException.class,
                 () -> autenticacionService.cambiarClave("no-existe", CLAVE_PRUEBA, "otra-clave"));
     }
 
@@ -105,7 +106,7 @@ class AutenticacionServiceTest {
     void laClaveAnteriorDejaDeServirDespuesDelCambio() {
         autenticacionService.cambiarClave(ID_FUNCIONARIO_PRUEBA, CLAVE_PRUEBA, "nueva-clave");
 
-        assertThrows(ReglaDeNegocioException.class,
+        assertThrows(CredencialesInvalidasException.class,
                 () -> autenticacionService.autenticar(ID_FUNCIONARIO_PRUEBA, CLAVE_PRUEBA));
     }
 }

@@ -1,5 +1,7 @@
 package cr.ac.una.reservas.servidor;
 
+import cr.ac.una.reservas.autenticacion.RolUsuario;
+import cr.ac.una.reservas.excepcion.AutorizacionException;
 import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.funcionario.FuncionarioService;
 import cr.ac.una.reservas.protocol.Accion;
@@ -23,7 +25,14 @@ final class RutasFuncionario {
             return null;
         });
         despachador.registrar(Accion.PUT, Rutas.FUNCIONARIOS, (cuerpo, sesion) -> {
-            servicio.modificar((Funcionario) cuerpo);
+            Funcionario funcionario = (Funcionario) cuerpo;
+            if (!sesion.esAdministrador()) {
+                if (!sesion.getUsuario().getId().equals(funcionario.getId())) {
+                    throw new AutorizacionException("Solo puede modificar su propia cuenta.");
+                }
+                funcionario.setRol(RolUsuario.FUNCIONARIO);
+            }
+            servicio.modificar(funcionario);
             return null;
         });
         despachador.registrar(Accion.DELETE, Rutas.FUNCIONARIOS, (cuerpo, sesion) -> {

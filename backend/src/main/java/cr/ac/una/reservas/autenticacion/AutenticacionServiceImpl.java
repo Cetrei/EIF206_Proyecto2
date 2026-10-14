@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.autenticacion;
 
+import cr.ac.una.reservas.excepcion.CredencialesInvalidasException;
 import cr.ac.una.reservas.excepcion.ReglaDeNegocioException;
 import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.persistence.AdministradorDao;
@@ -24,7 +25,7 @@ public class AutenticacionServiceImpl implements AutenticacionService {
     public Usuario autenticar(String id, String clave) {
         Optional<Usuario> usuario = buscarUsuarioPorId(id);
         if (usuario.isEmpty() || !usuario.get().getClave().equals(clave)) {
-            throw new ReglaDeNegocioException("El ID o la contraseña son incorrectos.");
+            throw new CredencialesInvalidasException("El ID o la contraseña son incorrectos.");
         }
         return usuario.get();
     }
@@ -32,7 +33,7 @@ public class AutenticacionServiceImpl implements AutenticacionService {
     public void cambiarClave(String idUsuario, String claveActual, String claveNueva) {
         Optional<Usuario> usuarioOpt = buscarUsuarioPorId(idUsuario);
         if (usuarioOpt.isEmpty() || !usuarioOpt.get().getClave().equals(claveActual)) {
-            throw new ReglaDeNegocioException("La contraseña actual es incorrecta.");
+            throw new CredencialesInvalidasException("La contraseña actual es incorrecta.");
         }
         if (claveNueva == null || claveNueva.isBlank()) {
             throw new ReglaDeNegocioException("La nueva contraseña no puede estar vacía.");

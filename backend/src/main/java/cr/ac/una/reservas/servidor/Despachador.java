@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.servidor;
 
+import cr.ac.una.reservas.excepcion.AutorizacionException;
 import cr.ac.una.reservas.excepcion.ErrorInternoException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
 import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
@@ -23,6 +24,27 @@ public final class Despachador {
             clave(Accion.PUT, Rutas.CLAVE)
     );
 
+    private static final String MENSAJE_SIN_PERMISO = "No tiene permiso para realizar esta operación.";
+    private static final Set<String> RUTAS_SOLO_ADMINISTRADOR = Set.of(
+            clave(Accion.GET, Rutas.FUNCIONARIOS),
+            clave(Accion.GET, Rutas.FUNCIONARIOS_POR_ID),
+            clave(Accion.GET, Rutas.FUNCIONARIOS_BUSCAR),
+            clave(Accion.POST, Rutas.FUNCIONARIOS),
+            clave(Accion.DELETE, Rutas.FUNCIONARIOS),
+            clave(Accion.POST, Rutas.CATEGORIAS),
+            clave(Accion.PUT, Rutas.CATEGORIAS),
+            clave(Accion.DELETE, Rutas.CATEGORIAS),
+            clave(Accion.POST, Rutas.RECURSOS),
+            clave(Accion.PUT, Rutas.RECURSOS),
+            clave(Accion.DELETE, Rutas.RECURSOS),
+            clave(Accion.GET, Rutas.IA_CONFIGURACION),
+            clave(Accion.PUT, Rutas.IA_CONFIGURACION)
+    );
+    private static final Set<String> RUTAS_SOLO_FUNCIONARIO = Set.of(
+            clave(Accion.POST, Rutas.RESERVAS),
+            clave(Accion.PUT, Rutas.RESERVAS)
+    );
+
     private final Map<String, Ruta> rutas = new HashMap<>();
 
     public void registrar(Accion accion, String ruta, Ruta manejador) {
@@ -41,6 +63,11 @@ public final class Despachador {
                     peticion.getId(),
                     sinRastro(new SesionNoIniciadaException("Debe iniciar sesión para realizar esta operación."))
             );
+        }
+        boolean sinPermiso = (RUTAS_SOLO_ADMINISTRADOR.contains(clave) && !sesion.esAdministrador())
+                || (RUTAS_SOLO_FUNCIONARIO.contains(clave) && !sesion.esFuncionario());
+        if (sinPermiso) {
+            return Respuesta.fracaso(peticion.getId(), sinRastro(new AutorizacionException(MENSAJE_SIN_PERMISO)));
         }
         try {
             return Respuesta.exito(peticion.getId(), ruta.ejecutar(peticion.getCuerpo(), sesion));
