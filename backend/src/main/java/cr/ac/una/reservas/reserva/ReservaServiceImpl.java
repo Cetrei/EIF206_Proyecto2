@@ -1,6 +1,7 @@
 package cr.ac.una.reservas.reserva;
 
 import cr.ac.una.reservas.categoria.Categoria;
+import cr.ac.una.reservas.excepcion.ErrorInternoException;
 import cr.ac.una.reservas.excepcion.ReglaDeNegocioException;
 import cr.ac.una.reservas.persistence.CategoriaDao;
 import cr.ac.una.reservas.persistence.DaoFactory;
@@ -14,13 +15,22 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Semaphore;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class ReservaServiceImpl implements ReservaService {
+    private static final Logger REGISTRO = Logger.getLogger(ReservaServiceImpl.class.getName());
+    private static final Semaphore PERMISO_RESERVAS = new Semaphore(1, true);
+
     private final ReservaDao reservaDao;
     private final RecursoDao recursoDao;
     private final CategoriaDao categoriaDao;
-    private final List<ReservaObserver> observadores = new ArrayList<>();
+    private final List<ReservaObserver> observadores = new CopyOnWriteArrayList<>();
 
     public ReservaServiceImpl() {
         this(DaoFactory.obtenerReservaDao(), DaoFactory.obtenerRecursoDao(), DaoFactory.obtenerCategoriaDao());
@@ -53,7 +63,45 @@ public class ReservaServiceImpl implements ReservaService {
 
     public ResultadoReserva intentarReservar(DatosNuevaReserva datos) {
         validarDatosBasicos(datos);
+        ResultadoReserva resultado = enExclusion(() -> reservarEnExclusion(datos));
+        if (resultado.isExitoso()) {
+            notificarReservaCreada(resultado.getReserva());
+        }
+        return resultado;
+    }
 
+    public ResultadoReserva intentarModificar(DatosNuevaReserva datos) {
+        if (datos.getId() == null) {
+            throw new ReglaDeNegocioException("Debe indicar la reserva que se desea modificar.");
+        }
+        validarDatosBasicos(datos);
+        ResultadoReserva resultado = enExclusion(() -> modificarEnExclusion(datos));
+        if (resultado.isExitoso()) {
+            notificarReservaModificada(resultado.getReserva());
+        }
+        return resultado;
+    }
+
+    public void cancelarReserva(Integer idReserva) {
+        Reserva cancelada = enExclusion(() -> cancelarEnExclusion(idReserva));
+        notificarReservaCancelada(cancelada);
+    }
+
+    private <T> T enExclusion(Supplier<T> accion) {
+        try {
+            PERMISO_RESERVAS.acquire();
+        } catch (InterruptedException interrupcion) {
+            Thread.currentThread().interrupt();
+            throw new ErrorInternoException();
+        }
+        try {
+            return accion.get();
+        } finally {
+            PERMISO_RESERVAS.release();
+        }
+    }
+
+    private ResultadoReserva reservarEnExclusion(DatosNuevaReserva datos) {
         List<Categoria> categoriasNoDisponibles = new ArrayList<>();
         List<Recurso> recursosAAsignar = new ArrayList<>();
 
@@ -77,18 +125,11 @@ public class ReservaServiceImpl implements ReservaService {
         reserva.setIdsRecursosAsignados(
                 recursosAAsignar.stream().map(Recurso::getId).collect(Collectors.toList())
         );
-        reservaDao.insertar(reserva);
-
-        notificarReservaCreada(reserva);
-        return ResultadoReserva.exito(reserva);
+        Reserva guardada = reservaDao.insertar(reserva);
+        return ResultadoReserva.exito(guardada);
     }
 
-    public ResultadoReserva intentarModificar(DatosNuevaReserva datos) {
-        if (datos.getId() == null) {
-            throw new ReglaDeNegocioException("Debe indicar la reserva que se desea modificar.");
-        }
-        validarDatosBasicos(datos);
-
+    private ResultadoReserva modificarEnExclusion(DatosNuevaReserva datos) {
         Reserva reservaExistente = reservaDao.buscarPorId(datos.getId())
                 .orElseThrow(() -> new ReglaDeNegocioException("No existe una reserva con ese ID."));
 
@@ -128,12 +169,10 @@ public class ReservaServiceImpl implements ReservaService {
                 recursosAAsignar.stream().map(Recurso::getId).collect(Collectors.toList())
         );
         reservaDao.actualizar(reservaExistente);
-
-        notificarReservaModificada(reservaExistente);
         return ResultadoReserva.exito(reservaExistente);
     }
 
-    public void cancelarReserva(Integer idReserva) {
+    private Reserva cancelarEnExclusion(Integer idReserva) {
         Reserva reserva = reservaDao.buscarPorId(idReserva)
                 .orElseThrow(() -> new ReglaDeNegocioException("No existe una reserva con ese ID."));
 
@@ -146,8 +185,7 @@ public class ReservaServiceImpl implements ReservaService {
 
         reserva.setEstado(EstadoReserva.CANCELADA);
         reservaDao.actualizar(reserva);
-
-        notificarReservaCancelada(reserva);
+        return reserva;
     }
 
     public void agregarObservador(ReservaObserver observador) {
@@ -159,20 +197,24 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     private void notificarReservaCreada(Reserva reserva) {
-        for (ReservaObserver observador : observadores) {
-            observador.onReservaCreada(reserva);
-        }
+        notificar(observador -> observador.onReservaCreada(reserva));
     }
 
     private void notificarReservaCancelada(Reserva reserva) {
-        for (ReservaObserver observador : observadores) {
-            observador.onReservaCancelada(reserva);
-        }
+        notificar(observador -> observador.onReservaCancelada(reserva));
     }
 
     private void notificarReservaModificada(Reserva reserva) {
+        notificar(observador -> observador.onReservaModificada(reserva));
+    }
+
+    private void notificar(Consumer<ReservaObserver> accion) {
         for (ReservaObserver observador : observadores) {
-            observador.onReservaModificada(reserva);
+            try {
+                accion.accept(observador);
+            } catch (RuntimeException excepcion) {
+                REGISTRO.log(Level.WARNING, "Un observador de reservas fallo al ser notificado", excepcion);
+            }
         }
     }
 
