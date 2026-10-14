@@ -1,1 +1,6 @@
 puerto=5050
+bd.host=localhost
+bd.puerto=3306
+bd.base=reservas
+bd.usuario=root
+bd.clave=
