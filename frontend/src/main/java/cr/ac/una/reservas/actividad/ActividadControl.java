@@ -1,5 +1,7 @@
 package cr.ac.una.reservas.actividad;
 
+import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.reporte.GeneracionReporteControl;
 import cr.ac.una.reservas.reporte.ReporteFactory;
@@ -63,6 +65,8 @@ public class ActividadControl implements ReservaObserver {
                     reservaService, fechaReferencia, this::alHacerClickActividad
             );
             modelo.setMatriz(estrategia);
+        } catch (ReservaAppException excepcion) {
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo cargar", excepcion);
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(
                     ventanaPropietaria,
@@ -117,6 +121,10 @@ public class ActividadControl implements ReservaObserver {
                     "programacion_actividades",
                     reservasDeLaSemana,
                     Map.of("subtitulo", subtitulo)
+            );
+        } catch (ReservaAppException excepcion) {
+            ReaccionExcepcion.mostrar(
+                    ventanaPropietaria, "No se pudo generar el reporte", excepcion
             );
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(

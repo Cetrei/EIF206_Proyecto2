@@ -3,6 +3,8 @@ package cr.ac.una.reservas.calendarizacion;
 import cr.ac.una.reservas.categoria.Categoria;
 import cr.ac.una.reservas.categoria.CategoriaObserver;
 import cr.ac.una.reservas.categoria.CategoriaService;
+import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.recurso.Recurso;
 import cr.ac.una.reservas.recurso.RecursoService;
@@ -87,6 +89,8 @@ public class CalendarizacionControl implements ReservaObserver, CategoriaObserve
                     recursoService, reservaService, categoria, fecha, this::alHacerClickCeldaOcupada
             );
             modelo.setMatriz(estrategia);
+        } catch (ReservaAppException excepcion) {
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo cargar", excepcion);
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(
                     ventanaPropietaria,
@@ -132,6 +136,10 @@ public class CalendarizacionControl implements ReservaObserver, CategoriaObserve
                     "calendarizacion",
                     filas,
                     Map.of("subtitulo", subtitulo)
+            );
+        } catch (ReservaAppException excepcion) {
+            ReaccionExcepcion.mostrar(
+                    ventanaPropietaria, "No se pudo generar el reporte", excepcion
             );
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(

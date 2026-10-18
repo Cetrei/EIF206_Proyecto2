@@ -6,6 +6,7 @@ import cr.ac.una.reservas.categoria.CategoriaObserver;
 import cr.ac.una.reservas.categoria.CategoriaService;
 import cr.ac.una.reservas.excepcion.ReglaDeNegocioException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.reporte.GeneracionReporteControl;
 import cr.ac.una.reservas.reporte.ReporteFactory;
@@ -114,7 +115,7 @@ public class RecursoControl implements CategoriaObserver {
                     "El recurso se guardó correctamente."
             );
         } catch (ReservaAppException excepcion) {
-            mostrarError("No se pudo guardar", excepcion.getMessage());
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo guardar", excepcion);
         }
     }
 
@@ -151,7 +152,7 @@ public class RecursoControl implements CategoriaObserver {
                     "El recurso se borró correctamente."
             );
         } catch (ReservaAppException excepcion) {
-            mostrarError("No se pudo borrar", excepcion.getMessage());
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo borrar", excepcion);
         }
     }
 

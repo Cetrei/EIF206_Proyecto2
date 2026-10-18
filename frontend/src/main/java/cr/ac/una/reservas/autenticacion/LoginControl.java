@@ -1,6 +1,9 @@
 package cr.ac.una.reservas.autenticacion;
 
+import cr.ac.una.reservas.excepcion.ConexionException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.principal.VentanaPrincipalControl;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.ui.componentes.BarraSuperior;
@@ -68,6 +71,10 @@ public class LoginControl {
             SesionControl.obtenerInstancia().iniciarSesion(usuario);
             navegarAVentanaPrincipal();
         } catch (ReservaAppException excepcion) {
+            if (excepcion instanceof ConexionException || excepcion instanceof SesionNoIniciadaException) {
+                ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo completar la acción", excepcion);
+                return;
+            }
             modelo.setMensajeError(excepcion.getMessage());
         }
     }
@@ -158,8 +165,8 @@ public class LoginControl {
                     "La contraseña se actualizó correctamente."
             );
         } catch (ReservaAppException excepcion) {
-            Popup.mostrarAviso(
-                    ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo cambiar la contraseña", excepcion.getMessage()
+            ReaccionExcepcion.mostrar(
+                    ventanaPropietaria, "No se pudo cambiar la contraseña", excepcion
             );
         }
     }

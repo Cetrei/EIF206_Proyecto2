@@ -11,7 +11,6 @@ import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.ui.componentes.Popup;
 
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import java.util.List;
 
 public final class ArranqueRemoto {
@@ -27,9 +26,8 @@ public final class ArranqueRemoto {
         conectarOSalir(ventana, conexion);
         ServiceFactory.instalar(proveedor);
         SesionControl.obtenerInstancia().alCerrarSesion(() -> cerrarSesionRemota(proveedor));
-        conexion.alPerderConexion(() -> SwingUtilities.invokeLater(
-                () -> recuperarConexion(ventana, conexion, mostrarLogin)
-        ));
+        ReaccionExcepcion.instalar(() -> recuperarConexion(ventana, conexion, mostrarLogin), mostrarLogin);
+        conexion.alPerderConexion(ReaccionExcepcion::conexionPerdida);
     }
 
     private static ConfiguracionConexion cargarConfiguracion(JFrame ventana) {
@@ -57,6 +55,12 @@ public final class ArranqueRemoto {
     }
 
     private static void recuperarConexion(JFrame ventana, ConexionBackend conexion, Runnable mostrarLogin) {
+        if (conexion.estaConectado()) {
+            if (!preguntarReintento(ventana, "El servidor no responde", "El servidor no respondió a tiempo.")) {
+                System.exit(0);
+            }
+            return;
+        }
         conectarOSalir(ventana, conexion);
         SesionControl.obtenerInstancia().cerrarSesion();
         mostrarLogin.run();

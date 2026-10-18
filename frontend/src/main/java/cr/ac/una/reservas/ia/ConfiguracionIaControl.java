@@ -1,8 +1,11 @@
 package cr.ac.una.reservas.ia;
 
 import cr.ac.una.reservas.autenticacion.SesionControl;
+import cr.ac.una.reservas.excepcion.ConexionException;
 import cr.ac.una.reservas.excepcion.ReglaDeNegocioException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.ui.componentes.Popup;
 
@@ -55,6 +58,10 @@ public class ConfiguracionIaControl {
                     "La configuración se guardó correctamente."
             );
         } catch (ReservaAppException excepcion) {
+            if (excepcion instanceof ConexionException || excepcion instanceof SesionNoIniciadaException) {
+                ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo guardar", excepcion);
+                return;
+            }
             Popup.mostrarAviso(
                     ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo guardar", excepcion.getMessage()
             );

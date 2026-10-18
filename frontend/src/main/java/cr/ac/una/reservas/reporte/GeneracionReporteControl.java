@@ -1,6 +1,7 @@
 package cr.ac.una.reservas.reporte;
 
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.ui.componentes.Popup;
 
 import javax.swing.JFileChooser;
@@ -38,9 +39,7 @@ public final class GeneracionReporteControl {
                     "El reporte se generó correctamente en:\n" + archivoDestino.getAbsolutePath()
             );
         } catch (ReservaAppException excepcion) {
-            Popup.mostrarAviso(
-                    ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo generar el reporte", excepcion.getMessage()
-            );
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo generar el reporte", excepcion);
         } catch (IllegalStateException excepcion) {
             Popup.mostrarAviso(
                     ventanaPropietaria,

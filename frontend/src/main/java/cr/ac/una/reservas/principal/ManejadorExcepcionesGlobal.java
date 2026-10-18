@@ -21,6 +21,10 @@ public final class ManejadorExcepcionesGlobal {
             return;
         }
 
+        if (ReaccionExcepcion.atender(ventanaActiva, excepcion)) {
+            return;
+        }
+
         Popup.mostrarAviso(
                 ventanaActiva,
                 Popup.Tipo.ERROR,

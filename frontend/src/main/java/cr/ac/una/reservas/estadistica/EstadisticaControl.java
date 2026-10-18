@@ -1,6 +1,7 @@
 package cr.ac.una.reservas.estadistica;
 
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.proxy.ServiceFactory;
 import cr.ac.una.reservas.reporte.DatosReporteEstadisticas;
 import cr.ac.una.reservas.reporte.GeneracionReporteControl;
@@ -57,7 +58,7 @@ public class EstadisticaControl {
             modelo.setRecursos(estadisticaService.recursosReservadosEnPeriodo(desde, hasta));
             modelo.setSubtituloRecursos(descripcionPeriodo(desde, hasta));
         } catch (ReservaAppException excepcion) {
-            Popup.mostrarAviso(ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo cargar", excepcion.getMessage());
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo cargar", excepcion);
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(
                     ventanaPropietaria,
@@ -82,7 +83,7 @@ public class EstadisticaControl {
             modelo.setActividades(estadisticaService.actividadesPorSemanaEnPeriodo(desde, hasta));
             modelo.setSubtituloActividades(descripcionPeriodo(desde, hasta));
         } catch (ReservaAppException excepcion) {
-            Popup.mostrarAviso(ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo cargar", excepcion.getMessage());
+            ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo cargar", excepcion);
         } catch (RuntimeException excepcion) {
             Popup.mostrarAviso(
                     ventanaPropietaria,

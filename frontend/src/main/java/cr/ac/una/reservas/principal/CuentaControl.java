@@ -4,7 +4,9 @@ import cr.ac.una.reservas.autenticacion.AutenticacionService;
 import cr.ac.una.reservas.Main;
 import cr.ac.una.reservas.autenticacion.SesionControl;
 import cr.ac.una.reservas.autenticacion.Usuario;
+import cr.ac.una.reservas.excepcion.ConexionException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
+import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
 import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.funcionario.FuncionarioService;
 import cr.ac.una.reservas.ui.componentes.PanelCuenta;
@@ -101,6 +103,10 @@ final class CuentaControl {
                     "Los cambios se guardaron correctamente."
             );
         } catch (ReservaAppException excepcion) {
+            if (excepcion instanceof ConexionException || excepcion instanceof SesionNoIniciadaException) {
+                ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo guardar", excepcion);
+                return;
+            }
             Popup.mostrarAviso(ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo guardar", excepcion.getMessage());
         }
     }
@@ -120,6 +126,10 @@ final class CuentaControl {
                     "La contraseña se actualizó correctamente."
             );
         } catch (ReservaAppException excepcion) {
+            if (excepcion instanceof ConexionException || excepcion instanceof SesionNoIniciadaException) {
+                ReaccionExcepcion.mostrar(ventanaPropietaria, "No se pudo cambiar la contraseña", excepcion);
+                return;
+            }
             Popup.mostrarAviso(
                     ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo cambiar la contraseña", excepcion.getMessage()
             );
