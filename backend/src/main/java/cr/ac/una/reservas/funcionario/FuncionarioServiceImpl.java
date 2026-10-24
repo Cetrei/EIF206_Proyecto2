@@ -52,9 +52,9 @@ public class FuncionarioServiceImpl implements FuncionarioService {
         if (funcionario.getNombre() == null || funcionario.getNombre().isBlank()) {
             throw new ReglaDeNegocioException("El funcionario debe tener un nombre.");
         }
-        if (funcionarioDao.buscarPorId(funcionario.getId()).isEmpty()) {
-            throw new ReglaDeNegocioException("No existe un funcionario con ese ID.");
-        }
+        Funcionario existente = funcionarioDao.buscarPorId(funcionario.getId())
+                .orElseThrow(() -> new ReglaDeNegocioException("No existe un funcionario con ese ID."));
+        funcionario.setClave(existente.getClave());
         funcionarioDao.actualizar(funcionario);
     }
 

@@ -64,6 +64,18 @@ class FuncionarioServiceTest {
     }
 
     @Test
+    void modificarNoPisaUnaClaveCambiadaDespues() {
+        funcionarioDao.insertar(new Funcionario("111", "claveNueva", "Juan Perez", "3323"));
+        Funcionario conClaveVieja = new Funcionario("111", "111", "Juan Perez", "5555");
+
+        funcionarioService.modificar(conClaveVieja);
+
+        Funcionario guardado = funcionarioDao.buscarPorId("111").get();
+        assertEquals("claveNueva", guardado.getClave());
+        assertEquals("5555", guardado.getTelefono());
+    }
+
+    @Test
     void rechazaModificarFuncionarioInexistente() {
         Funcionario funcionario = new Funcionario("999", "999", "No existe", "0000");
 
