@@ -6,21 +6,10 @@ import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
 import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.principal.VentanaPrincipalControl;
 import cr.ac.una.reservas.proxy.ServiceFactory;
-import cr.ac.una.reservas.ui.componentes.BarraSuperior;
-import cr.ac.una.reservas.ui.componentes.BotonPrimario;
-import cr.ac.una.reservas.ui.componentes.CampoTexto;
 import cr.ac.una.reservas.ui.componentes.Popup;
-import cr.ac.una.reservas.ui.componentes.Tarjeta;
-import cr.ac.una.reservas.ui.iconos.Icono;
-import cr.ac.una.reservas.ui.tema.GestorTema;
 
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import java.awt.BorderLayout;
 import java.awt.Frame;
-import java.awt.GridLayout;
 
 public class LoginControl {
 
@@ -86,76 +75,13 @@ public class LoginControl {
     }
 
     private void abrirCambioClave() {
-        CampoTexto campoId = new CampoTexto(false);
-        campoId.setEtiqueta("ID");
-        campoId.setLongitudMaxima(30);
-        campoId.setObligatorio(true);
-        campoId.setIcono(Icono.USUARIO);
-
-        CampoTexto campoClaveActual = new CampoTexto(true);
-        campoClaveActual.setEtiqueta("CONTRASEÑA ACTUAL");
-        campoClaveActual.setLongitudMaxima(100);
-        campoClaveActual.setObligatorio(true);
-        campoClaveActual.setIcono(Icono.CANDADO);
-
-        CampoTexto campoClaveNueva = new CampoTexto(true);
-        campoClaveNueva.setEtiqueta("CONTRASEÑA NUEVA");
-        campoClaveNueva.setLongitudMaxima(100);
-        campoClaveNueva.setObligatorio(true);
-        campoClaveNueva.setIcono(Icono.CANDADO);
-
-        BotonPrimario botonConfirmar = new BotonPrimario();
-        botonConfirmar.setTexto("Confirmar");
-        botonConfirmar.setIcono(Icono.CHECK);
-
-        Tarjeta tarjeta = armarTarjetaCambioClave(campoId, campoClaveActual, campoClaveNueva, botonConfirmar);
-        JDialog dialogo = armarDialogoCambioClave(tarjeta);
-
-        botonConfirmar.alHacerClick(() ->
-                confirmarCambioClave(dialogo, campoId, campoClaveActual, campoClaveNueva));
-
-        dialogo.pack();
-        dialogo.setLocationRelativeTo(ventanaPropietaria);
-        dialogo.setVisible(true);
+        DialogoCambioClave dialogo = new DialogoCambioClave(ventanaPropietaria);
+        dialogo.alConfirmar(() -> confirmarCambioClave(dialogo));
+        dialogo.mostrar();
     }
 
-    private Tarjeta armarTarjetaCambioClave(
-            CampoTexto campoId, CampoTexto campoClaveActual, CampoTexto campoClaveNueva, BotonPrimario botonConfirmar
-    ) {
-        Tarjeta tarjeta = new Tarjeta();
-        tarjeta.setTitulo("Cambiar contraseña");
-
-        JPanel contenido = tarjeta.obtenerPanelContenido();
-        contenido.setLayout(new GridLayout(4, 1, 0, 10));
-        contenido.add(campoId.obtenerPanel());
-        contenido.add(campoClaveActual.obtenerPanel());
-        contenido.add(campoClaveNueva.obtenerPanel());
-        contenido.add(botonConfirmar.obtenerPanel());
-        return tarjeta;
-    }
-
-    private JDialog armarDialogoCambioClave(Tarjeta tarjeta) {
-        JDialog dialogo = new JDialog(ventanaPropietaria, "Cambiar contraseña", true);
-        dialogo.setUndecorated(true);
-        dialogo.setResizable(false);
-
-        BarraSuperior barraSuperior = new BarraSuperior();
-        barraSuperior.alCerrar(dialogo::dispose);
-
-        JPanel envoltorio = new JPanel(new BorderLayout());
-        envoltorio.setOpaque(true);
-        envoltorio.setBackground(GestorTema.obtenerInstancia().temaActivo().colorFondoVentana());
-        envoltorio.setBorder(new EmptyBorder(0, 16, 16, 16));
-        envoltorio.add(barraSuperior.obtenerPanel(), BorderLayout.NORTH);
-        envoltorio.add(tarjeta.obtenerPanel(), BorderLayout.CENTER);
-        dialogo.setContentPane(envoltorio);
-        return dialogo;
-    }
-
-    private void confirmarCambioClave(
-            JDialog dialogo, CampoTexto campoId, CampoTexto campoClaveActual, CampoTexto campoClaveNueva
-    ) {
-        String id = campoId.obtenerTexto();
+    private void confirmarCambioClave(DialogoCambioClave dialogo) {
+        String id = dialogo.obtenerId();
         if (id == null || id.isBlank()) {
             Popup.mostrarAviso(
                     ventanaPropietaria, Popup.Tipo.ERROR, "No se pudo cambiar la contraseña",
@@ -164,8 +90,8 @@ public class LoginControl {
             return;
         }
         try {
-            autenticacionService.cambiarClave(id.trim(), campoClaveActual.obtenerTexto(), campoClaveNueva.obtenerTexto());
-            dialogo.dispose();
+            autenticacionService.cambiarClave(id.trim(), dialogo.obtenerClaveActual(), dialogo.obtenerClaveNueva());
+            dialogo.cerrar();
             Popup.mostrarAviso(
                     ventanaPropietaria, Popup.Tipo.CONFIRMACION, "Cambiar contraseña",
                     "La contraseña se actualizó correctamente."
