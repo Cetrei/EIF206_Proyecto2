@@ -6,13 +6,10 @@ import cr.ac.una.reservas.persistence.DaoFactory;
 import cr.ac.una.reservas.persistence.RecursoDao;
 import cr.ac.una.reservas.persistence.ReservaDao;
 import cr.ac.una.reservas.recurso.Recurso;
-import cr.ac.una.reservas.reserva.EstadoReserva;
-import cr.ac.una.reservas.reserva.Reserva;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,53 +38,30 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         }
 
         Map<Integer, Long> cantidadPorCategoria = new LinkedHashMap<>();
-        for (Reserva reserva : reservaDao.listarTodos()) {
-            if (reserva.getEstado() != EstadoReserva.ACTIVA) {
-                continue;
+        reservaDao.contarRecursosReservados(desde, hasta).forEach((idRecurso, cantidad) -> {
+            Recurso recurso = recursosPorId.get(idRecurso);
+            if (recurso != null) {
+                cantidadPorCategoria.merge(recurso.getIdCategoria(), cantidad, Long::sum);
             }
-            if (reserva.getFecha() == null
-                    || reserva.getFecha().isBefore(desde)
-                    || reserva.getFecha().isAfter(hasta)) {
-                continue;
-            }
-            for (String idRecurso : reserva.getIdsRecursosAsignados()) {
-                Recurso recurso = recursosPorId.get(idRecurso);
-                if (recurso == null) {
-                    continue;
-                }
-                cantidadPorCategoria.merge(recurso.getIdCategoria(), 1L, Long::sum);
-            }
-        }
+        });
 
         List<EstadisticaCategoria> resultado = new ArrayList<>();
         for (Map.Entry<Integer, Long> entrada : cantidadPorCategoria.entrySet()) {
             categoriaDao.buscarPorId(entrada.getKey())
                     .ifPresent(categoria -> resultado.add(new EstadisticaCategoria(categoria, entrada.getValue())));
         }
+        resultado.sort(Comparator.comparingLong(EstadisticaCategoria::getCantidad).reversed()
+                .thenComparing(estadistica -> estadistica.getCategoria().getDescripcion()));
         return resultado;
     }
 
     public List<EstadisticaSemana> actividadesPorSemanaEnPeriodo(LocalDate desde, LocalDate hasta) {
         validarRango(desde, hasta);
 
-        Map<LocalDate, Long> cantidadPorSemana = new LinkedHashMap<>();
-        for (Reserva reserva : reservaDao.listarTodos()) {
-            if (reserva.getEstado() != EstadoReserva.ACTIVA) {
-                continue;
-            }
-            if (reserva.getFecha() == null
-                    || reserva.getFecha().isBefore(desde)
-                    || reserva.getFecha().isAfter(hasta)) {
-                continue;
-            }
-            LocalDate inicioSemana = reserva.getFecha().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-            cantidadPorSemana.merge(inicioSemana, 1L, Long::sum);
-        }
-
         List<EstadisticaSemana> resultado = new ArrayList<>();
-        cantidadPorSemana.forEach((inicioSemana, cantidad) ->
-                resultado.add(new EstadisticaSemana(inicioSemana, cantidad)));
-        resultado.sort((a, b) -> a.getInicioSemana().compareTo(b.getInicioSemana()));
+        reservaDao.contarActividadesPorSemana(desde, hasta)
+                .forEach((inicioSemana, cantidad) -> resultado.add(new EstadisticaSemana(inicioSemana, cantidad)));
+        resultado.sort(Comparator.comparing(EstadisticaSemana::getInicioSemana));
         return resultado;
     }
 

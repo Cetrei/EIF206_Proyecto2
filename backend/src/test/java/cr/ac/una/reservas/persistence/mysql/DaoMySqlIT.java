@@ -156,6 +156,33 @@ class DaoMySqlIT {
     }
 
     @Test
+    void deberiaAgruparEstadisticasConSql() {
+        funcionarios.insertar(new Funcionario(ID_FUNCIONARIO, "abc", "Ana Perez", "8888-0000"));
+        Categoria categoria = categorias.insertar(new Categoria(null, DESCRIPCION_CATEGORIA));
+        recursos.insertar(new Recurso(ID_RECURSO_A, categoria.getId(), "Recurso A"));
+        recursos.insertar(new Recurso(ID_RECURSO_B, categoria.getId(), "Recurso B"));
+        guardarEn(LocalDate.of(2031, 3, 10), EstadoReserva.ACTIVA, List.of(ID_RECURSO_A, ID_RECURSO_B));
+        guardarEn(LocalDate.of(2031, 3, 12), EstadoReserva.ACTIVA, List.of(ID_RECURSO_A));
+        guardarEn(LocalDate.of(2031, 3, 18), EstadoReserva.ACTIVA, List.of(ID_RECURSO_A));
+        guardarEn(LocalDate.of(2031, 3, 11), EstadoReserva.CANCELADA, List.of(ID_RECURSO_B));
+
+        var porRecurso = reservas.contarRecursosReservados(LocalDate.of(2031, 3, 3), LocalDate.of(2031, 3, 16));
+        assertEquals(2L, porRecurso.get(ID_RECURSO_A));
+        assertEquals(1L, porRecurso.get(ID_RECURSO_B));
+
+        var porSemana = reservas.contarActividadesPorSemana(LocalDate.of(2031, 3, 3), LocalDate.of(2031, 3, 23));
+        assertEquals(2L, porSemana.get(LocalDate.of(2031, 3, 10)));
+        assertEquals(1L, porSemana.get(LocalDate.of(2031, 3, 17)));
+    }
+
+    private void guardarEn(LocalDate fecha, EstadoReserva estado, List<String> idsRecursos) {
+        Reserva reserva = reservaDePrueba("Estadistica IT", idsRecursos);
+        reserva.setFecha(fecha);
+        reserva.setEstado(estado);
+        reservas.insertar(reserva);
+    }
+
+    @Test
     void deberiaRechazarUnaReservaConRecursoInexistenteSinDejarRastro() {
         funcionarios.insertar(new Funcionario(ID_FUNCIONARIO, "abc", "Ana Perez", "8888-0000"));
         Reserva reserva = reservaDePrueba("Sin recurso valido", List.of("IT-NO-EXISTE"));

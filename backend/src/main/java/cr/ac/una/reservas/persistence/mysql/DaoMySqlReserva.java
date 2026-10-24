@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,14 @@ import java.util.stream.Collectors;
 public class DaoMySqlReserva extends DaoMySqlBase<Reserva, Integer> implements ReservaDao {
     private static final String SELECCION =
             "SELECT id, id_funcionario, actividad, fecha, hora_inicio, hora_fin, estado FROM reserva";
+    private static final String RECURSOS_POR_ID =
+            "SELECT rr.id_recurso, COUNT(*) FROM reserva r JOIN reserva_recurso rr ON rr.id_reserva = r.id "
+                    + "WHERE r.estado = 'ACTIVA' AND r.fecha BETWEEN ? AND ? "
+                    + "GROUP BY rr.id_recurso ORDER BY rr.id_recurso";
+    private static final String ACTIVIDADES_POR_SEMANA =
+            "SELECT DATE_SUB(fecha, INTERVAL WEEKDAY(fecha) DAY) AS semana, COUNT(*) FROM reserva "
+                    + "WHERE estado = 'ACTIVA' AND fecha BETWEEN ? AND ? "
+                    + "GROUP BY semana ORDER BY semana";
     private static final String INSERTAR_DETALLE = "INSERT INTO reserva_recurso (id_reserva, id_recurso) VALUES (?, ?)";
     private static final String ELIMINAR_DETALLE = "DELETE FROM reserva_recurso WHERE id_reserva = ? AND id_recurso = ?";
     private static final String ELIMINAR_DETALLES = "DELETE FROM reserva_recurso WHERE id_reserva = ?";
@@ -54,6 +63,41 @@ public class DaoMySqlReserva extends DaoMySqlBase<Reserva, Integer> implements R
                 SELECCION + " WHERE id_funcionario = ? ORDER BY id",
                 sentencia -> sentencia.setString(1, idFuncionario)
         ));
+    }
+
+    @Override
+    public Map<String, Long> contarRecursosReservados(LocalDate desde, LocalDate hasta) {
+        Map<String, Long> conteo = new LinkedHashMap<>();
+        agrupar(RECURSOS_POR_ID, desde, hasta, filas -> conteo.put(filas.getString(1), filas.getLong(2)));
+        return conteo;
+    }
+
+    @Override
+    public Map<LocalDate, Long> contarActividadesPorSemana(LocalDate desde, LocalDate hasta) {
+        Map<LocalDate, Long> conteo = new LinkedHashMap<>();
+        agrupar(ACTIVIDADES_POR_SEMANA, desde, hasta,
+                filas -> conteo.put(filas.getObject(1, LocalDate.class), filas.getLong(2)));
+        return conteo;
+    }
+
+    private void agrupar(String sql, LocalDate desde, LocalDate hasta, LectorFila lector) {
+        try (Connection enlace = conexion().obtener();
+             PreparedStatement sentencia = enlace.prepareStatement(sql)) {
+            sentencia.setObject(1, desde);
+            sentencia.setObject(2, hasta);
+            try (ResultSet filas = sentencia.executeQuery()) {
+                while (filas.next()) {
+                    lector.leer(filas);
+                }
+            }
+        } catch (SQLException excepcion) {
+            throw fallo("consultar las estadisticas", excepcion);
+        }
+    }
+
+    @FunctionalInterface
+    private interface LectorFila {
+        void leer(ResultSet filas) throws SQLException;
     }
 
     @Override
