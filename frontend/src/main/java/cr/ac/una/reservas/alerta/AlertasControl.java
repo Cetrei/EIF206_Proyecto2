@@ -63,8 +63,8 @@ public class AlertasControl {
         popup.setTitulo("¿Descartar?");
         popup.setMensaje(alerta.getActividad());
         popup.setAcciones(List.of(
-                new Popup.AccionPopup("No", false, null),
-                new Popup.AccionPopup("Sí", true, () -> modelo.descartar(alerta))
+                new Popup.AccionPopup("Sí", true, () -> modelo.descartar(alerta)),
+                new Popup.AccionPopup("No", false, null)
         ));
         popup.mostrar();
     }
@@ -75,10 +75,11 @@ public class AlertasControl {
         texto.append("Fecha: ").append(alerta.getFecha()).append("<br>");
         texto.append("Desde: ").append(alerta.getHoraInicio().format(FORMATO_HORA)).append("<br>");
         texto.append("Hasta: ").append(alerta.getHoraFin().format(FORMATO_HORA)).append("<br><br>");
-        texto.append("Recursos:");
+        texto.append("Recursos:<table border=1 cellspacing=0 cellpadding=4 width=200>");
         for (String recurso : alerta.getDescripcionesRecursos()) {
-            texto.append("<br>").append(recurso);
+            texto.append("<tr><td>").append(recurso).append("</td></tr>");
         }
+        texto.append("</table>");
         return texto.toString();
     }
 }

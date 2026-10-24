@@ -25,7 +25,9 @@ public enum Icono {
     NUBE('\uf0c2'),
     CHIP('\uf2db'),
     SOL('\uf185'),
-    LUNA('\uf186');
+    LUNA('\uf186'),
+    CARPETA('\uf07c'),
+    CIRCULO_MENOS('\uf056');
 
     private final char codigo;
 
