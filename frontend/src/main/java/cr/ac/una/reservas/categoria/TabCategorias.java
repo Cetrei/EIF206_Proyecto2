@@ -91,6 +91,8 @@ public class TabCategorias implements CambioTemaListener, PropertyChangeListener
 
         campoDescripcionReal = new CampoTexto();
         campoDescripcionReal.setEtiqueta("DESCRIPCIÓN");
+        campoDescripcionReal.setLongitudMaxima(100);
+        campoDescripcionReal.setObligatorio(true);
         campoDescripcionReal.setPlaceholder("Ej: Proyector HDMI 4K");
 
         botonGuardarReal = new BotonPrimario();

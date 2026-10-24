@@ -63,11 +63,15 @@ public class LoginPanel implements CambioTemaListener, PropertyChangeListener {
 
         campoIdReal = new CampoTexto();
         campoIdReal.setEtiqueta("IDENTIFICACIÓN (ID)");
+        campoIdReal.setLongitudMaxima(30);
+        campoIdReal.setObligatorio(true);
         campoIdReal.setIcono(IconoSemantico.USUARIO.icono());
         txtID = campoIdReal.obtenerPanel();
 
         campoContrasenaReal = new CampoTexto(true);
         campoContrasenaReal.setEtiqueta("CONTRASEÑA");
+        campoContrasenaReal.setLongitudMaxima(100);
+        campoContrasenaReal.setObligatorio(true);
         campoContrasenaReal.setIcono(IconoSemantico.CONTRASENA.icono());
         txtContrasena = campoContrasenaReal.obtenerPanel();
     }

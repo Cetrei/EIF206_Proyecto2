@@ -167,6 +167,8 @@ public class TabReservas implements CambioTemaListener, PropertyChangeListener {
 
         campoActividadReal = new CampoTexto();
         campoActividadReal.setEtiqueta("NOMBRE DE LA ACTIVIDAD");
+        campoActividadReal.setLongitudMaxima(150);
+        campoActividadReal.setObligatorio(true);
         campoActividadReal.setPlaceholder("Ej: Sesión de Junta Directiva");
 
         restricciones.gridy = 0;

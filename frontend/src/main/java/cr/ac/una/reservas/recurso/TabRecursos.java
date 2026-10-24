@@ -98,12 +98,17 @@ public class TabRecursos implements CambioTemaListener, PropertyChangeListener {
 
         campoIdReal = new CampoTexto();
         campoIdReal.setEtiqueta("ID / Nº ACTIVO");
+        campoIdReal.setSoloDigitos(true);
+        campoIdReal.setLongitudMaxima(30);
+        campoIdReal.setObligatorio(true);
         campoIdReal.setPlaceholder("Ej: 238715");
 
         comboCategoriaReal = crearComboCategorias();
 
         campoDescripcionReal = new CampoTexto();
         campoDescripcionReal.setEtiqueta("DESCRIPCIÓN DEL RECURSO");
+        campoDescripcionReal.setLongitudMaxima(100);
+        campoDescripcionReal.setObligatorio(true);
         campoDescripcionReal.setPlaceholder("Ej: Laptop #238715 Core i7");
 
         botonGuardarReal = new BotonPrimario();

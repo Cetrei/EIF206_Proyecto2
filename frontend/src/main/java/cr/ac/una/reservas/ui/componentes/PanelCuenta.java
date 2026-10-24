@@ -99,10 +99,14 @@ public class PanelCuenta implements CambioTemaListener {
 
         campoClaveActualReal = new CampoTexto(true);
         campoClaveActualReal.setEtiqueta("CONTRASEÑA ACTUAL");
+        campoClaveActualReal.setLongitudMaxima(100);
+        campoClaveActualReal.setObligatorio(true);
         campoClaveActualReal.setIcono(IconoSemantico.CONTRASENA.icono());
 
         campoClaveNuevaReal = new CampoTexto(true);
         campoClaveNuevaReal.setEtiqueta("CONTRASEÑA NUEVA");
+        campoClaveNuevaReal.setLongitudMaxima(100);
+        campoClaveNuevaReal.setObligatorio(true);
         campoClaveNuevaReal.setIcono(IconoSemantico.CONTRASENA.icono());
 
         botonConfirmarClaveReal = new BotonPrimario();

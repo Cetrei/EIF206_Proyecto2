@@ -88,14 +88,20 @@ public class LoginControl {
     private void abrirCambioClave() {
         CampoTexto campoId = new CampoTexto(false);
         campoId.setEtiqueta("ID");
+        campoId.setLongitudMaxima(30);
+        campoId.setObligatorio(true);
         campoId.setIcono(Icono.USUARIO);
 
         CampoTexto campoClaveActual = new CampoTexto(true);
         campoClaveActual.setEtiqueta("CONTRASEÑA ACTUAL");
+        campoClaveActual.setLongitudMaxima(100);
+        campoClaveActual.setObligatorio(true);
         campoClaveActual.setIcono(Icono.CANDADO);
 
         CampoTexto campoClaveNueva = new CampoTexto(true);
         campoClaveNueva.setEtiqueta("CONTRASEÑA NUEVA");
+        campoClaveNueva.setLongitudMaxima(100);
+        campoClaveNueva.setObligatorio(true);
         campoClaveNueva.setIcono(Icono.CANDADO);
 
         BotonPrimario botonConfirmar = new BotonPrimario();

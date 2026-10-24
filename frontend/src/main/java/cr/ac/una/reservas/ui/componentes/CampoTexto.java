@@ -13,6 +13,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.FocusAdapter;
@@ -28,6 +29,9 @@ public class CampoTexto implements CambioTemaListener, RespondeAEnter {
 
     private final boolean esContrasena;
     private boolean soloLectura;
+    private boolean obligatorio;
+    private String etiqueta = "";
+    private final FiltroCampo filtro = new FiltroCampo();
 
     private String placeholder = "";
     private boolean mostrandoPlaceholder;
@@ -48,12 +52,13 @@ public class CampoTexto implements CambioTemaListener, RespondeAEnter {
         txtCampo = esContrasena ? new JPasswordField() : new JTextField();
         txtCampo.setBorder(null);
         txtCampo.setOpaque(false);
+        ((AbstractDocument) txtCampo.getDocument()).setDocumentFilter(filtro);
         txtCampo.addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent evento) {
                 if (mostrandoPlaceholder) {
                     mostrandoPlaceholder = false;
-                    txtCampo.setText("");
+                    escribir("");
                     txtCampo.setForeground(GestorTema.obtenerInstancia().temaActivo().colorTexto());
                 }
                 pnlCaja.setBorder(bordeCaja(GestorTema.obtenerInstancia().temaActivo().colorBordeEnfocado()));
@@ -111,7 +116,8 @@ public class CampoTexto implements CambioTemaListener, RespondeAEnter {
     }
 
     public void setEtiqueta(String texto) {
-        lblCampo.setText(texto);
+        this.etiqueta = texto;
+        mostrarEtiqueta();
     }
 
     public void setPlaceholder(String texto) {
@@ -127,14 +133,35 @@ public class CampoTexto implements CambioTemaListener, RespondeAEnter {
             return;
         }
         mostrandoPlaceholder = false;
-        txtCampo.setText(valor);
+        escribir(valor);
         txtCampo.setForeground(colorTextoActual(GestorTema.obtenerInstancia().temaActivo()));
     }
 
     private void mostrarPlaceholder() {
         mostrandoPlaceholder = true;
-        txtCampo.setText(placeholder);
+        escribir(placeholder);
         txtCampo.setForeground(GestorTema.obtenerInstancia().temaActivo().colorTextoSecundario());
+    }
+
+    private void escribir(String texto) {
+        filtro.ejecutarLibre(() -> txtCampo.setText(texto));
+    }
+
+    public void setSoloDigitos(boolean soloDigitos) {
+        filtro.setSoloDigitos(soloDigitos);
+    }
+
+    public void setLongitudMaxima(int longitudMaxima) {
+        filtro.setLongitudMaxima(longitudMaxima);
+    }
+
+    public void setObligatorio(boolean obligatorio) {
+        this.obligatorio = obligatorio;
+        mostrarEtiqueta();
+    }
+
+    private void mostrarEtiqueta() {
+        lblCampo.setText(obligatorio ? etiqueta + " *" : etiqueta);
     }
 
     private String obtenerTextoCrudo() {

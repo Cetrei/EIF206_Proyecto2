@@ -87,14 +87,21 @@ public class TabFuncionarios implements CambioTemaListener, PropertyChangeListen
 
         campoIdReal = new CampoTexto();
         campoIdReal.setEtiqueta("IDENTIFICACIÓN (ID)");
+        campoIdReal.setSoloDigitos(true);
+        campoIdReal.setLongitudMaxima(30);
+        campoIdReal.setObligatorio(true);
         campoIdReal.setPlaceholder("Ej: 304560789");
 
         campoNombreReal = new CampoTexto();
         campoNombreReal.setEtiqueta("NOMBRE COMPLETO");
+        campoNombreReal.setLongitudMaxima(100);
+        campoNombreReal.setObligatorio(true);
         campoNombreReal.setPlaceholder("Ej: María Pérez Delgado");
 
         campoTelefonoReal = new CampoTexto();
         campoTelefonoReal.setEtiqueta("TELÉFONO");
+        campoTelefonoReal.setLongitudMaxima(30);
+        campoTelefonoReal.setObligatorio(true);
         campoTelefonoReal.setPlaceholder("Ej: 8888-2222");
 
         botonGuardarReal = new BotonPrimario();

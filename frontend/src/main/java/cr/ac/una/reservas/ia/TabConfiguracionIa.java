@@ -64,6 +64,7 @@ public class TabConfiguracionIa implements CambioTemaListener {
 
         campoApiKeyReal = new CampoTexto(true);
         campoApiKeyReal.setEtiqueta("API KEY");
+        campoApiKeyReal.setLongitudMaxima(255);
         campoApiKeyReal.setPlaceholder("Ej: AQ.Ab8...");
 
         comboModeloReal = ComboBoxTematizado.crear(GestorTema.obtenerInstancia().temaActivo());
