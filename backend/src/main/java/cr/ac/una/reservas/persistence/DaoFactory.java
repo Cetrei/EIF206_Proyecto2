@@ -7,10 +7,22 @@ import cr.ac.una.reservas.persistence.memoria.DatosIniciales;
 import cr.ac.una.reservas.persistence.memoria.FuncionarioDaoEnMemoriaTemporal;
 import cr.ac.una.reservas.persistence.memoria.RecursoDaoEnMemoriaTemporal;
 import cr.ac.una.reservas.persistence.memoria.ReservaDaoEnMemoriaTemporal;
+import cr.ac.una.reservas.persistence.mysql.ConexionBd;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlAdministrador;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlCategoria;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlConfiguracionIa;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlFuncionario;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlRecurso;
+import cr.ac.una.reservas.persistence.mysql.DaoMySqlReserva;
+
+import java.nio.file.Path;
 
 public final class DaoFactory {
     public static final String PROPIEDAD_MODO = "reservas.dao";
+    public static final String PROPIEDAD_CONFIGURACION = "reservas.config";
+    public static final String ARCHIVO_CONFIGURACION = "config.properties";
     public static final String MODO_MEMORIA = "memoria";
+    public static final String MODO_MYSQL = "mysql";
 
     private record Daos(
             FuncionarioDao funcionario,
@@ -55,8 +67,26 @@ public final class DaoFactory {
         if (MODO_MEMORIA.equalsIgnoreCase(modo.trim())) {
             return enMemoria();
         }
+        if (MODO_MYSQL.equalsIgnoreCase(modo.trim())) {
+            return enMySql();
+        }
         throw new PersistenciaException(
-                "Modo de persistencia no disponible: '" + modo + "'. Valores validos de " + PROPIEDAD_MODO + ": " + MODO_MEMORIA
+                "Modo de persistencia no disponible: '" + modo + "'. Valores validos de " + PROPIEDAD_MODO + ": "
+                        + MODO_MEMORIA + ", " + MODO_MYSQL
+        );
+    }
+
+    private static Daos enMySql() {
+        ConexionBd conexion = ConexionBd.cargar(
+                Path.of(System.getProperty(PROPIEDAD_CONFIGURACION, ARCHIVO_CONFIGURACION))
+        );
+        return new Daos(
+                new DaoMySqlFuncionario(conexion),
+                new DaoMySqlAdministrador(conexion),
+                new DaoMySqlCategoria(conexion),
+                new DaoMySqlRecurso(conexion),
+                new DaoMySqlReserva(conexion),
+                new DaoMySqlConfiguracionIa(conexion)
         );
     }
 
