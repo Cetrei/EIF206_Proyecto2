@@ -11,9 +11,7 @@ import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.funcionario.FuncionarioService;
 import cr.ac.una.reservas.ui.componentes.PanelCuenta;
 import cr.ac.una.reservas.ui.componentes.Popup;
-import cr.ac.una.reservas.ui.tema.GestorTema;
 
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import java.awt.Frame;
 
@@ -43,24 +41,18 @@ final class CuentaControl {
         String telefono = usuario instanceof Funcionario ? ((Funcionario) usuario).getTelefono() : "";
         panelCuenta.cargarDatos(nombre, usuario.getId(), telefono);
 
-        JDialog dialogoCuenta = new JDialog(ventanaPropietaria, "Mi Perfil", true);
-        dialogoCuenta.setUndecorated(true);
-        dialogoCuenta.setResizable(false);
-        dialogoCuenta.getContentPane().setBackground(GestorTema.obtenerInstancia().temaActivo().colorFondoVentana());
-        dialogoCuenta.setContentPane(panelCuenta.obtenerPanel());
+        DialogoCuenta dialogoCuenta = new DialogoCuenta(ventanaPropietaria, panelCuenta);
 
         panelCuenta.alGuardar(() -> guardarMiCuenta(panelCuenta));
         panelCuenta.alCambiarContrasena(panelCuenta::mostrarVistaClave);
         panelCuenta.alConfirmarCambioClave(() -> confirmarCambioClave(panelCuenta, usuario.getId()));
         panelCuenta.alCerrarSesion(() -> {
-            dialogoCuenta.dispose();
+            dialogoCuenta.cerrar();
             cerrarSesionYVolverALogin();
         });
-        panelCuenta.alCerrar(dialogoCuenta::dispose);
+        panelCuenta.alCerrar(dialogoCuenta::cerrar);
 
-        dialogoCuenta.pack();
-        dialogoCuenta.setLocationRelativeTo(ventanaPropietaria);
-        dialogoCuenta.setVisible(true);
+        dialogoCuenta.mostrar();
     }
 
     void guardarMiCuenta(PanelCuenta panelCuenta) {

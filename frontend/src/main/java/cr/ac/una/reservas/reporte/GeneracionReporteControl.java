@@ -4,12 +4,9 @@ import cr.ac.una.reservas.excepcion.ReservaAppException;
 import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.ui.componentes.Popup;
 
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.Frame;
 import java.io.File;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public final class GeneracionReporteControl {
@@ -24,7 +21,7 @@ public final class GeneracionReporteControl {
             List<T> datos,
             Map<String, String> metadatos
     ) {
-        File archivoDestino = elegirArchivoDestino(ventanaPropietaria, nombreSugerido);
+        File archivoDestino = SelectorArchivoReporte.elegirArchivoPdf(ventanaPropietaria, nombreSugerido);
         if (archivoDestino == null) {
             return;
         }
@@ -48,23 +45,5 @@ public final class GeneracionReporteControl {
                     "La generación de reportes en PDF todavía no está disponible para esta pantalla."
             );
         }
-    }
-
-    private static File elegirArchivoDestino(Frame ventanaPropietaria, String nombreSugerido) {
-        JFileChooser selector = new JFileChooser();
-        selector.setDialogTitle("Guardar reporte PDF");
-        selector.setFileFilter(new FileNameExtensionFilter("Documento PDF (*.pdf)", "pdf"));
-        selector.setSelectedFile(new File(nombreSugerido + ".pdf"));
-
-        int resultado = selector.showSaveDialog(ventanaPropietaria);
-        if (resultado != JFileChooser.APPROVE_OPTION) {
-            return null;
-        }
-
-        File archivoElegido = selector.getSelectedFile();
-        if (!archivoElegido.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            archivoElegido = new File(archivoElegido.getParentFile(), archivoElegido.getName() + ".pdf");
-        }
-        return archivoElegido;
     }
 }

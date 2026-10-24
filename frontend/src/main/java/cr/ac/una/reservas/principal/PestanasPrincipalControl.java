@@ -24,13 +24,7 @@ import cr.ac.una.reservas.recurso.TabRecursos;
 import cr.ac.una.reservas.reserva.ReservaControl;
 import cr.ac.una.reservas.reserva.ReservaModel;
 import cr.ac.una.reservas.reserva.TabReservas;
-import cr.ac.una.reservas.ui.componentes.ScrollBarTematizado;
-import cr.ac.una.reservas.ui.tema.GestorTema;
 
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import java.awt.BorderLayout;
 import java.awt.Frame;
 
 final class PestanasPrincipalControl {
@@ -53,55 +47,42 @@ final class PestanasPrincipalControl {
         FuncionarioModel funcionarioModelo = new FuncionarioModel();
         TabFuncionarios tabFuncionarios = new TabFuncionarios(funcionarioModelo);
         new FuncionarioControl(funcionarioModelo, tabFuncionarios, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelFuncionarios(), tabFuncionarios.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelFuncionarios(), tabFuncionarios.obtenerPanel());
 
         CategoriaModel categoriaModelo = new CategoriaModel();
         TabCategorias tabCategorias = new TabCategorias(categoriaModelo);
         new CategoriaControl(categoriaModelo, tabCategorias, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelCategorias(), tabCategorias.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelCategorias(), tabCategorias.obtenerPanel());
 
         RecursoModel recursoModelo = new RecursoModel();
         TabRecursos tabRecursos = new TabRecursos(recursoModelo);
         new RecursoControl(recursoModelo, tabRecursos, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelRecursos(), tabRecursos.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelRecursos(), tabRecursos.obtenerPanel());
 
         TabConfiguracionIa tabConfiguracionIa = new TabConfiguracionIa();
         new ConfiguracionIaControl(tabConfiguracionIa, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelConfiguracionIa(), tabConfiguracionIa.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelConfiguracionIa(), tabConfiguracionIa.obtenerPanel());
     }
 
     private void inicializarPestanasComunes() {
         CalendarizacionModel calendarizacionModelo = new CalendarizacionModel();
         TabCalendarizacion tabCalendarizacion = new TabCalendarizacion(calendarizacionModelo);
         new CalendarizacionControl(calendarizacionModelo, tabCalendarizacion, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelCalendarizacion(), tabCalendarizacion.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelCalendarizacion(), tabCalendarizacion.obtenerPanel());
 
         ActividadModel actividadModelo = new ActividadModel();
         TabActividades tabActividades = new TabActividades(actividadModelo);
         new ActividadControl(actividadModelo, tabActividades, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelActividades(), tabActividades.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelActividades(), tabActividades.obtenerPanel());
 
         EstadisticaModel estadisticaModelo = new EstadisticaModel();
         TabEstadisticas tabEstadisticas = new TabEstadisticas(estadisticaModelo);
         new EstadisticaControl(estadisticaModelo, tabEstadisticas, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelEstadisticas(), tabEstadisticas.obtenerPanel());
+        ContenidoPestana.colocar(vista.obtenerPanelEstadisticas(), tabEstadisticas.obtenerPanel());
 
         ReservaModel reservaModelo = new ReservaModel();
         TabReservas tabReservas = new TabReservas(reservaModelo);
         new ReservaControl(reservaModelo, tabReservas, ventanaPropietaria);
-        colocarEnPestana(vista.obtenerPanelReservas(), tabReservas.obtenerPanel());
-    }
-
-    private void colocarEnPestana(JPanel panelPestana, JPanel contenido) {
-        JScrollPane scroll = new JScrollPane(contenido);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getViewport().setOpaque(false);
-        scroll.setOpaque(false);
-        ScrollBarTematizado.aplicar(scroll.getVerticalScrollBar(), GestorTema.obtenerInstancia().temaActivo());
-        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        panelPestana.setLayout(new BorderLayout());
-        panelPestana.setBorder(BorderFactory.createEmptyBorder());
-        panelPestana.add(scroll, BorderLayout.CENTER);
+        ContenidoPestana.colocar(vista.obtenerPanelReservas(), tabReservas.obtenerPanel());
     }
 }

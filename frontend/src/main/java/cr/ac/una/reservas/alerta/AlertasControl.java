@@ -7,7 +7,6 @@ import cr.ac.una.reservas.ui.componentes.Popup;
 
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -32,10 +31,7 @@ public class AlertasControl {
         PanelAlertas panelAlertas = new PanelAlertas();
         AlertasControl control = new AlertasControl(new AlertasModel(), panelAlertas, ventana);
         EnrutadorNotificaciones.obtenerInstancia().establecerDestino(control::recibir);
-        JPanel contenedor = new JPanel(new BorderLayout());
-        contenedor.add(contenido, BorderLayout.CENTER);
-        contenedor.add(panelAlertas.obtenerPanel(), BorderLayout.EAST);
-        return contenedor;
+        return panelAlertas.envolver(contenido);
     }
 
     public void recibir(Notificacion notificacion) {

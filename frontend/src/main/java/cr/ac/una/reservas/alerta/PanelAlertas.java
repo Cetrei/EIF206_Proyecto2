@@ -113,6 +113,13 @@ public class PanelAlertas implements CambioTemaListener {
         return pnlRaiz;
     }
 
+    public JPanel envolver(JPanel contenido) {
+        JPanel contenedor = new JPanel(new BorderLayout());
+        contenedor.add(contenido, BorderLayout.CENTER);
+        contenedor.add(pnlRaiz, BorderLayout.EAST);
+        return contenedor;
+    }
+
     @Override
     public void onCambioTema(Tema tema) {
         aplicarTema(tema);
