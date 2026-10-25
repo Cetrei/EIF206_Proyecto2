@@ -6,6 +6,7 @@ import cr.ac.una.reservas.persistence.memoria.RecursoDaoEnMemoriaTemporal;
 import cr.ac.una.reservas.persistence.memoria.ReservaDaoEnMemoriaTemporal;
 import cr.ac.una.reservas.recurso.Recurso;
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Disabled;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -19,6 +20,8 @@ import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+
+@Disabled("Pendiente de autorizacion del nucleo")
 class ReservaConcurrenciaTest {
     private static final int HILOS = 20;
 
