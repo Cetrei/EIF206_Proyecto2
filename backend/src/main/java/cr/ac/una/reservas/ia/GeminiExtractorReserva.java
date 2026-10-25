@@ -175,6 +175,12 @@ public class GeminiExtractorReserva implements ExtractorReserva {
                 + "categorias debe ser un arreglo que contenga UNICAMENTE ids de la lista disponible.\n"
                 + "Si no puedes identificar un dato, usa null. "
                 + "Si no identificas categorias, usa [].\n"
+                + "Interpreta el lenguaje natural: manana es la fecha actual mas un dia; "
+                + "si dice temprano o apenas llega sin dar hora, usa 08:00.\n"
+                + "Si la frase indica un uso corto sin dar duracion (solo para, un momento, rapido), "
+                + "usa como horaFin una hora despues de horaInicio.\n"
+                + "Relaciona sinonimos con la categoria de significado mas parecido "
+                + "(computadora, pc, portatil equivalen a laptop).\n"
                 + "Categorias disponibles:\n"
                 + categorias
                 + "Frase del usuario:\n"
@@ -277,10 +283,10 @@ public class GeminiExtractorReserva implements ExtractorReserva {
             return valores;
         }
 
-        Pattern patronValor = Pattern.compile("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"");
+        Pattern patronValor = Pattern.compile("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"|([^,\\s\\\"]+)");
         Matcher valor = patronValor.matcher(arreglo.group(1));
         while (valor.find()) {
-            valores.add(desescaparJson(valor.group(1)));
+            valores.add(valor.group(1) != null ? desescaparJson(valor.group(1)) : valor.group(2));
         }
         return valores;
     }
