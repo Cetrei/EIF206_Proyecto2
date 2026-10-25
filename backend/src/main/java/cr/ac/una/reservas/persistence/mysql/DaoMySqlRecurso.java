@@ -11,8 +11,18 @@ import java.util.List;
 public class DaoMySqlRecurso extends DaoMySqlBase<Recurso, String> implements RecursoDao {
     private static final String SELECCION = "SELECT id, id_categoria, descripcion FROM recurso";
 
+    private static final String ELIMINAR_ASIGNACIONES_CANCELADAS =
+            "DELETE rr FROM reserva_recurso rr JOIN reserva r ON r.id = rr.id_reserva "
+                    + "WHERE rr.id_recurso = ? AND r.estado = 'CANCELADA'";
+
     public DaoMySqlRecurso(ConexionBd conexion) {
         super(conexion);
+    }
+
+    @Override
+    public boolean eliminar(String id) {
+        ejecutar(ELIMINAR_ASIGNACIONES_CANCELADAS, sentencia -> sentencia.setString(1, id));
+        return super.eliminar(id);
     }
 
     @Override

@@ -42,6 +42,11 @@ final class ConexionCliente implements Runnable, AutoCloseable {
         escribir(notificacion);
     }
 
+    void terminarSesion(Notificacion aviso) {
+        sesion.cerrar();
+        escribir(aviso);
+    }
+
     @Override
     public void run() {
         try (socket) {

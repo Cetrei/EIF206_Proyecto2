@@ -103,3 +103,69 @@ INSERT IGNORE INTO reserva_recurso (id_reserva, id_recurso) VALUES
     (4, '34343'),
     (5, '452784'),
     (6, '238715');
+
+CREATE DATABASE IF NOT EXISTS reservas_test
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE reservas_test;
+
+CREATE TABLE IF NOT EXISTS usuario (
+    id    VARCHAR(30)  NOT NULL,
+    clave VARCHAR(100) NOT NULL,
+    rol   VARCHAR(20)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT ck_usuario_rol CHECK (rol IN ('ADMINISTRADOR', 'FUNCIONARIO'))
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS funcionario (
+    id       VARCHAR(30)  NOT NULL,
+    nombre   VARCHAR(100) NOT NULL,
+    telefono VARCHAR(30)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_funcionario_usuario FOREIGN KEY (id) REFERENCES usuario (id)
+        ON DELETE CASCADE
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS categoria (
+    id          INT          NOT NULL AUTO_INCREMENT,
+    descripcion VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS recurso (
+    id           VARCHAR(30)  NOT NULL,
+    id_categoria INT          NOT NULL,
+    descripcion  VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_recurso_categoria FOREIGN KEY (id_categoria) REFERENCES categoria (id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS reserva (
+    id             INT          NOT NULL AUTO_INCREMENT,
+    id_funcionario VARCHAR(30)  NOT NULL,
+    actividad      VARCHAR(150) NOT NULL,
+    fecha          DATE         NOT NULL,
+    hora_inicio    TIME         NOT NULL,
+    hora_fin       TIME         NOT NULL,
+    estado         VARCHAR(20)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_reserva_funcionario FOREIGN KEY (id_funcionario) REFERENCES funcionario (id),
+    CONSTRAINT ck_reserva_estado CHECK (estado IN ('ACTIVA', 'CANCELADA'))
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS reserva_recurso (
+    id_reserva INT         NOT NULL,
+    id_recurso VARCHAR(30) NOT NULL,
+    PRIMARY KEY (id_reserva, id_recurso),
+    CONSTRAINT fk_reserva_recurso_reserva FOREIGN KEY (id_reserva) REFERENCES reserva (id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_reserva_recurso_recurso FOREIGN KEY (id_recurso) REFERENCES recurso (id)
+) ENGINE = InnoDB;
+
+CREATE TABLE IF NOT EXISTS configuracion_ia (
+    id      VARCHAR(30)  NOT NULL,
+    api_key VARCHAR(255) NOT NULL,
+    modelo  VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
+) ENGINE = InnoDB;

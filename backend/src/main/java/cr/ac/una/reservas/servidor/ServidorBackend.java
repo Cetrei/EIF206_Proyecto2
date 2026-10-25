@@ -1,6 +1,7 @@
 package cr.ac.una.reservas.servidor;
 
 import cr.ac.una.reservas.protocol.Notificacion;
+import cr.ac.una.reservas.protocol.SesionTerminada;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -15,6 +16,8 @@ import java.util.logging.Logger;
 
 public final class ServidorBackend implements AutoCloseable {
     private static final Logger REGISTRO = Logger.getLogger(ServidorBackend.class.getName());
+    private static final String MENSAJE_CUENTA_ELIMINADA =
+            "Su cuenta fue eliminada por un administrador. Se cerró su sesión.";
 
     private final Despachador despachador;
     private final Set<ConexionCliente> clientes = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -24,6 +27,15 @@ public final class ServidorBackend implements AutoCloseable {
 
     public ServidorBackend(Despachador despachador) {
         this.despachador = despachador;
+        despachador.alEliminarFuncionario(this::terminarSesionesDe);
+    }
+
+    void terminarSesionesDe(String idUsuario) {
+        for (ConexionCliente cliente : clientes) {
+            if (cliente.esDelUsuario(idUsuario)) {
+                cliente.terminarSesion(new SesionTerminada(MENSAJE_CUENTA_ELIMINADA));
+            }
+        }
     }
 
     public void iniciar(int puerto) throws IOException {

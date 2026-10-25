@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.integracion;
 
+import cr.ac.una.reservas.persistence.falso.ModoMemoria;
 import cr.ac.una.reservas.autenticacion.Administrador;
 import cr.ac.una.reservas.autenticacion.Usuario;
 import cr.ac.una.reservas.categoria.Categoria;
@@ -7,8 +8,10 @@ import cr.ac.una.reservas.excepcion.ConexionException;
 import cr.ac.una.reservas.excepcion.ErrorInternoException;
 import cr.ac.una.reservas.excepcion.ReservaAppException;
 import cr.ac.una.reservas.excepcion.SesionNoIniciadaException;
+import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.protocol.AlertaReserva;
 import cr.ac.una.reservas.protocol.Notificacion;
+import cr.ac.una.reservas.protocol.SesionTerminada;
 import cr.ac.una.reservas.proxy.ConexionBackend;
 import cr.ac.una.reservas.recurso.Recurso;
 import cr.ac.una.reservas.reserva.DatosNuevaReserva;
@@ -40,6 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServidorIT {
+    static {
+        ModoMemoria.activar();
+    }
+
     private static ServidorBackend servidor;
 
     private final List<ConexionBackend> conexiones = new ArrayList<>();
@@ -175,6 +182,27 @@ class ServidorIT {
         assertEquals(List.of("Sala alerta " + marca), alerta.getDescripcionesRecursos());
         assertNull(alertasAutor.poll(300, TimeUnit.MILLISECONDS));
         servidorPropio.close();
+    }
+
+    @Test
+    void alEliminarUnFuncionarioSuSesionRecibeSesionTerminadaYSeCierra() throws Exception {
+        BlockingQueue<Notificacion> avisosDelFuncionario = new LinkedBlockingQueue<>();
+        BlockingQueue<Notificacion> avisosDelOtro = new LinkedBlockingQueue<>();
+        ProveedorRemoto admin = sesionAdministrador(conectar(servidor, new LinkedBlockingQueue<>()));
+        String id = String.valueOf(System.nanoTime() % 1_000_000_000L);
+        admin.funcionario().crear(new Funcionario(id, "clave", "Funcionario temporal", "8888-0000"));
+        ProveedorRemoto afectado = new ProveedorRemoto(conectar(servidor, avisosDelFuncionario));
+        afectado.autenticacion().autenticar(id, id);
+        ProveedorRemoto otro = new ProveedorRemoto(conectar(servidor, avisosDelOtro));
+        otro.autenticacion().autenticar("111", "111");
+
+        admin.funcionario().eliminar(id);
+
+        SesionTerminada aviso = assertInstanceOf(SesionTerminada.class, avisosDelFuncionario.poll(5, TimeUnit.SECONDS));
+        assertFalse(aviso.getMensaje().isBlank());
+        assertNull(avisosDelOtro.poll(300, TimeUnit.MILLISECONDS));
+        assertThrows(SesionNoIniciadaException.class, () -> afectado.categoria().listarTodas());
+        assertNotNull(otro.categoria().listarTodas());
     }
 
     @Test

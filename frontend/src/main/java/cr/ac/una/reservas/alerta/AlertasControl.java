@@ -1,7 +1,9 @@
 package cr.ac.una.reservas.alerta;
 
 import cr.ac.una.reservas.protocol.AlertaReserva;
+import cr.ac.una.reservas.principal.ReaccionExcepcion;
 import cr.ac.una.reservas.protocol.Notificacion;
+import cr.ac.una.reservas.protocol.SesionTerminada;
 import cr.ac.una.reservas.proxy.EnrutadorNotificaciones;
 import cr.ac.una.reservas.ui.componentes.Popup;
 
@@ -37,6 +39,8 @@ public class AlertasControl {
     public void recibir(Notificacion notificacion) {
         if (notificacion instanceof AlertaReserva alerta) {
             SwingUtilities.invokeLater(() -> modelo.agregar(alerta));
+        } else if (notificacion instanceof SesionTerminada terminada) {
+            ReaccionExcepcion.sesionTerminada(ventanaPropietaria, terminada.getMensaje());
         }
     }
 

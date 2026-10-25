@@ -74,6 +74,8 @@ public class PanelAlertas implements CambioTemaListener {
         tabla.setIntercellSpacing(new Dimension(0, 0));
         tabla.setFillsViewportHeight(true);
         tabla.getTableHeader().setReorderingAllowed(false);
+        tabla.getTableHeader().setResizingAllowed(true);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         tabla.getTableHeader().setDefaultRenderer(RenderizadoresAlerta.encabezado());
         tabla.getColumnModel().getColumn(0).setCellRenderer(RenderizadoresAlerta.texto());
         configurarIcono(COLUMNA_VER, RenderizadoresAlerta.icono(Icono.CARPETA, false, "Ver"));
@@ -90,7 +92,7 @@ public class PanelAlertas implements CambioTemaListener {
         modeloColumna.setCellRenderer(renderizador);
         modeloColumna.setPreferredWidth(ANCHO_ICONO);
         modeloColumna.setMinWidth(ANCHO_ICONO);
-        modeloColumna.setMaxWidth(ANCHO_ICONO);
+        modeloColumna.setResizable(true);
     }
 
     public void alVer(Consumer<AlertaReserva> accion) {

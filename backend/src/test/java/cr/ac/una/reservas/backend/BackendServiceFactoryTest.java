@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.backend;
 
+import cr.ac.una.reservas.persistence.falso.ModoMemoria;
 import cr.ac.una.reservas.categoria.Categoria;
 import cr.ac.una.reservas.categoria.CategoriaObserver;
 
@@ -10,6 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BackendServiceFactoryTest {
+    static {
+        ModoMemoria.activar();
+    }
+
 
     @Test
     void devuelveSiempreLaMismaInstanciaDeCategoriaService() {

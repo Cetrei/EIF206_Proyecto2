@@ -13,6 +13,7 @@ import cr.ac.una.reservas.protocol.Rutas;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,6 +47,15 @@ public final class Despachador {
     );
 
     private final Map<String, Ruta> rutas = new HashMap<>();
+    private volatile Consumer<String> alEliminarFuncionario = idFuncionario -> { };
+
+    public void alEliminarFuncionario(Consumer<String> accion) {
+        this.alEliminarFuncionario = accion;
+    }
+
+    void funcionarioEliminado(String idFuncionario) {
+        alEliminarFuncionario.accept(idFuncionario);
+    }
 
     public void registrar(Accion accion, String ruta, Ruta manejador) {
         rutas.put(clave(accion, ruta), manejador);

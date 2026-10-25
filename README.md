@@ -5,43 +5,81 @@
 - Santiago Hernandez Chaves
 
 ## Setup
-**Version JDK**: 21 o superior (`release 21` en los tres modulos). Desarrollado con ```26.0.2```
+**Version JDK**: 21 o superior (`release 21` en todos los modulos). Desarrollado con ```26.0.2```
+
+**Maven**: 3.9 o superior. **Base de datos**: MySQL 8 o MariaDB.
 
 ## Descripcion
-Sistema de reservas distribuido: varios frontends Swing (MVC) conectados por un solo socket a un backend sin interfaz, que es el unico que habla con MySQL. Cada reserva nueva se notifica a los demas frontends con sesion iniciada, que la muestran en el area de alertas.
+Sistema de reservas de recursos con arquitectura distribuida. Dos procesos independientes que se comunican por sockets con hilos: el **Frontend** (Swing, MVC, sin ninguna referencia a la base de datos) y el **Backend** (servidor sin interfaz, unico que habla con MySQL). El Frontend usa el patron Proxy: cada service remoto tiene una clase proxy local que envia y recibe las peticiones por el socket. Cuando un usuario registra una reserva, el Backend notifica de forma asincrona a los demas Frontend con sesion, que la muestran en el area de Alertas (ver o descartar).
 
 ```
-Frontend (Swing, MVC)  --TCP-->  Backend (servidor)  --JDBC-->  MySQL
+Frontend (Swing, MVC)  --sockets-->  Backend (servidor)  --JDBC-->  MySQL
 ```
+
+Se pueden abrir varios Frontend contra un unico Backend, incluso en maquinas distintas.
 
 ## Modulos
 | Modulo | Contenido |
 |---|---|
 | `common` | modelo, interfaces de service, protocolo, excepciones |
-| `backend` | servidor, services, persistencia MySQL y en memoria, extractor de IA |
+| `backend` | servidor, services, persistencia MySQL, extractor de IA |
 | `frontend` | pantallas, controllers, proxies, reportes PDF, alertas |
 | `integracion` | solo pruebas: sockets reales y controllers contra el backend |
 
-El frontend no depende del backend ni conoce la base de datos.
-
-## Compilacion
-- **Maven**: `mvn verify` desde la raiz. No necesita MySQL: las pruebas de integracion usan DAO en memoria sobre un socket real.
-- **IntelliJ**: activar *Settings > Editor > GUI Designer > Generate GUI into: Java source code*, para que los `.form` generen el codigo de la interfaz y Maven compile igual.
-
-## Ejecucion
-1. Crear la base: `mariadb -uroot -p < base_datos.sql` (o `mysql`). Crea `reservas` y `reservas_test` con datos de muestra.
-2. Copiar `backend/config.properties.example` a `backend/config.properties` y poner el puerto y las credenciales de MySQL.
-3. Backend (desde la carpeta `backend`, la opcion `-Dreservas.dao=mysql` es obligatoria; sin ella usa datos en memoria): `java -Dreservas.dao=mysql -cp target/backend-1.0-SNAPSHOT.jar:../common/target/common-1.0-SNAPSHOT.jar:<mysql-connector-j.jar> cr.ac.una.reservas.backend.MainBackend`. Antes: `mvn -DskipTests package` desde la raiz.
-4. Copiar `frontend/config.properties.example` a `frontend/config.properties` con la IP y el puerto del backend, y ejecutar `cr.ac.una.reservas.Main` del modulo `frontend`. Se pueden abrir varios frontends.
-5. Usuarios de muestra: `admin`/`123`, `111`/`111`, `222`/`222`, `123`/`123`. La clave de Gemini se configura en la pestana Configuracion IA (la ve solo el administrador).
+## Base de datos
+Ejecutar una vez el script (se puede repetir sin problema):
+```
+mysql -uroot -p < base_datos.sql
+```
+Crea las bases `reservas` (con datos de muestra) y `reservas_test` (solo tablas, la usan las pruebas de integracion de la base).
 
 ## Configuracion
-- Frontend: `config.properties` con host y puerto del backend.
-- Backend: `config.properties` con el puerto y las credenciales de MySQL.
-- Base de datos: `base_datos.sql` (se puede correr varias veces; incluye los datos de muestra).
+Copiar cada `config.properties.example` a `config.properties` en su modulo y ajustarlo:
+- `backend/config.properties`: `puerto` del servidor y credenciales de MySQL (`bd.host`, `bd.puerto`, `bd.base`, `bd.usuario`, `bd.clave`).
+- `frontend/config.properties`: `host` (IP del Backend) y `puerto`. Sin archivo se usa `localhost:5050`.
+
+El archivo se busca en la carpeta de trabajo y, si no esta, en la carpeta del modulo (`backend` o `frontend`).
+
+## Ejecucion con Maven
+Desde la raiz:
+```
+mvn -DskipTests package
+```
+Backend (persiste siempre en MySQL; `<mysql-connector-j.jar>` esta en `~/.m2/repository/com/mysql/mysql-connector-j/9.0.0/`):
+```
+cd backend
+java -cp target/backend-1.0-SNAPSHOT.jar:../common/target/common-1.0-SNAPSHOT.jar:<mysql-connector-j.jar> cr.ac.una.reservas.backend.MainBackend
+```
+Frontend (repetir en otra terminal para abrir mas; `<forms_rt.jar>` esta en `~/.m2/repository/com/intellij/forms_rt/7.0.3/`):
+```
+cd frontend
+java -cp target/frontend-1.0-SNAPSHOT.jar:../common/target/common-1.0-SNAPSHOT.jar:<forms_rt.jar> cr.ac.una.reservas.Main
+```
+En Windows el separador del classpath es `;` en lugar de `:`.
+
+## Ejecucion con IntelliJ IDEA
+1. `File > Open` y elegir el `pom.xml` de la raiz (Open as Project). Esperar la importacion de Maven.
+2. `Settings > Editor > GUI Designer > Generate GUI into: Java source code`.
+3. Ejecutar `cr.ac.una.reservas.backend.MainBackend` (modulo `backend`) y despues `cr.ac.una.reservas.Main` (modulo `frontend`). Para abrir varios Frontend, en la configuracion de ejecucion activar `Allow multiple instances`.
+
+## Pruebas
+```
+mvn verify
+```
+Corre las pruebas de unidad (Surefire) y de integracion (Failsafe) con JUnit Jupiter, sin necesitar MySQL: usan DAO en memoria sobre un socket real. Algunas pruebas de interfaz abren ventanas Swing por unos segundos. `DaoMySqlIT` prueba la persistencia real contra `reservas_test` y se omite sola si no hay base; para ejecutarla:
+```
+mvn verify -Dbd.puerto=3306 -Dbd.usuario=root -Dbd.clave=<clave>
+```
+
+## Usuarios de muestra
+| ID | Clave | Rol |
+|---|---|---|
+| `admin` | `123` | Administrador |
+| `111`, `222`, `123` | igual al ID | Funcionario |
+
+La clave de Gemini para el asistente de reservas se configura en la pestana Configuracion IA (la ve solo el administrador).
 
 ## Documentacion
 - [`docs/SPEC.md`](docs/SPEC.md): arquitectura, decisiones y supuestos.
-- [`docs/DIVISION_TRABAJO.md`](docs/DIVISION_TRABAJO.md): reparto del trabajo, hitos y reglas del equipo.
-- `docs/modelo-datos.md`: dependencias funcionales y pasos hasta 3FN.
-- `docs/plan-pruebas.md`: lista de verificacion por funcionalidad.
+- [`docs/modelo-datos.md`](docs/modelo-datos.md): dependencias funcionales y pasos hasta 3FN.
+- [`docs/plan-pruebas.md`](docs/plan-pruebas.md): lista de verificacion por funcionalidad.

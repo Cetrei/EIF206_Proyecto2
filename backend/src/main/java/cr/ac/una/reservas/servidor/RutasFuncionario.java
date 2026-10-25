@@ -36,7 +36,9 @@ final class RutasFuncionario {
             return null;
         });
         despachador.registrar(Accion.DELETE, Rutas.FUNCIONARIOS, (cuerpo, sesion) -> {
-            servicio.eliminar((String) cuerpo);
+            String idFuncionario = (String) cuerpo;
+            servicio.eliminar(idFuncionario);
+            despachador.funcionarioEliminado(idFuncionario);
             return null;
         });
     }

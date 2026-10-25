@@ -6,11 +6,11 @@ import cr.ac.una.reservas.ui.componentes.CampoTexto;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import javax.swing.JDialog;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import java.awt.Container;
 import java.awt.Frame;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -56,27 +56,26 @@ class LoginControlTest {
         Frame ventanaPropietaria = new Frame();
         LoginControl control = new LoginControl(modelo, vista, ventanaPropietaria, autenticacionService);
 
-        CampoTexto campoId = new CampoTexto(false);
-        campoId.mostrarValor(" " + ID_ADMIN + " ");
-        CampoTexto campoClaveActual = new CampoTexto(true);
-        campoClaveActual.mostrarValor(CLAVE_ADMIN);
-        CampoTexto campoClaveNueva = new CampoTexto(true);
-        campoClaveNueva.mostrarValor("nueva-clave");
-        JDialog dialogo = new JDialog(ventanaPropietaria, "Cambiar contraseña", false);
+        DialogoCambioClave dialogo = new DialogoCambioClave(ventanaPropietaria);
+        asignarCampo(dialogo, "campoId", " " + ID_ADMIN + " ");
+        asignarCampo(dialogo, "campoClaveActual", CLAVE_ADMIN);
+        asignarCampo(dialogo, "campoClaveNueva", "nueva-clave");
 
-        invocarConfirmarCambioClave(control, dialogo, campoId, campoClaveActual, campoClaveNueva);
+        invocarConfirmarCambioClave(control, dialogo);
 
         assertEquals("nueva-clave", administradorDao.buscarPorId(ID_ADMIN).get().getClave());
     }
 
-    private static void invocarConfirmarCambioClave(
-            LoginControl control, JDialog dialogo, CampoTexto campoId, CampoTexto campoClaveActual, CampoTexto campoClaveNueva
-    ) throws Exception {
-        Method metodo = LoginControl.class.getDeclaredMethod(
-                "confirmarCambioClave", JDialog.class, CampoTexto.class, CampoTexto.class, CampoTexto.class
-        );
+    private static void asignarCampo(DialogoCambioClave dialogo, String nombreCampo, String valor) throws Exception {
+        Field campo = DialogoCambioClave.class.getDeclaredField(nombreCampo);
+        campo.setAccessible(true);
+        ((CampoTexto) campo.get(dialogo)).mostrarValor(valor);
+    }
+
+    private static void invocarConfirmarCambioClave(LoginControl control, DialogoCambioClave dialogo) throws Exception {
+        Method metodo = LoginControl.class.getDeclaredMethod("confirmarCambioClave", DialogoCambioClave.class);
         metodo.setAccessible(true);
-        metodo.invoke(control, dialogo, campoId, campoClaveActual, campoClaveNueva);
+        metodo.invoke(control, dialogo);
     }
 
     private static JTextField campoTexto(Container contenedor) {

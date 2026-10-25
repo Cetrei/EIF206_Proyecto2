@@ -183,6 +183,23 @@ class DaoMySqlIT {
     }
 
     @Test
+    void deberiaEliminarFuncionariosYRecursosQueSoloTuvieronReservasCanceladas() {
+        funcionarios.insertar(new Funcionario(ID_FUNCIONARIO, "abc", "Ana Perez", "8888-0000"));
+        Categoria categoria = categorias.insertar(new Categoria(null, DESCRIPCION_CATEGORIA));
+        recursos.insertar(new Recurso(ID_RECURSO_A, categoria.getId(), "Recurso A"));
+        recursos.insertar(new Recurso(ID_RECURSO_B, categoria.getId(), "Recurso B"));
+        guardarEn(LocalDate.of(2031, 4, 7), EstadoReserva.CANCELADA, List.of(ID_RECURSO_A));
+        guardarEn(LocalDate.of(2031, 4, 8), EstadoReserva.CANCELADA, List.of(ID_RECURSO_B));
+
+        assertTrue(recursos.eliminar(ID_RECURSO_A));
+        assertTrue(recursos.buscarPorId(ID_RECURSO_A).isEmpty());
+        assertTrue(funcionarios.eliminar(ID_FUNCIONARIO));
+
+        assertTrue(funcionarios.buscarPorId(ID_FUNCIONARIO).isEmpty());
+        assertTrue(reservas.listarPorFuncionario(ID_FUNCIONARIO).isEmpty());
+    }
+
+    @Test
     void deberiaRechazarUnaReservaConRecursoInexistenteSinDejarRastro() {
         funcionarios.insertar(new Funcionario(ID_FUNCIONARIO, "abc", "Ana Perez", "8888-0000"));
         Reserva reserva = reservaDePrueba("Sin recurso valido", List.of("IT-NO-EXISTE"));

@@ -2,6 +2,7 @@ package cr.ac.una.reservas.backend;
 
 import cr.ac.una.reservas.servidor.RutasBackend;
 import cr.ac.una.reservas.servidor.ServidorBackend;
+import cr.ac.una.reservas.util.ArchivoConfiguracion;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +24,7 @@ public final class MainBackend {
     }
 
     private static int leerPuerto() throws IOException {
-        Path archivo = Path.of("config.properties");
+        Path archivo = ArchivoConfiguracion.ubicar("backend");
         if (!Files.exists(archivo)) {
             return PUERTO_POR_DEFECTO;
         }

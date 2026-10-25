@@ -14,13 +14,13 @@ import cr.ac.una.reservas.persistence.mysql.DaoMySqlConfiguracionIa;
 import cr.ac.una.reservas.persistence.mysql.DaoMySqlFuncionario;
 import cr.ac.una.reservas.persistence.mysql.DaoMySqlRecurso;
 import cr.ac.una.reservas.persistence.mysql.DaoMySqlReserva;
+import cr.ac.una.reservas.util.ArchivoConfiguracion;
 
 import java.nio.file.Path;
 
 public final class DaoFactory {
     public static final String PROPIEDAD_MODO = "reservas.dao";
     public static final String PROPIEDAD_CONFIGURACION = "reservas.config";
-    public static final String ARCHIVO_CONFIGURACION = "config.properties";
     public static final String MODO_MEMORIA = "memoria";
     public static final String MODO_MYSQL = "mysql";
 
@@ -34,7 +34,7 @@ public final class DaoFactory {
     ) {
     }
 
-    private static final Daos DAOS = crear(System.getProperty(PROPIEDAD_MODO, MODO_MEMORIA));
+    private static final Daos DAOS = crear(System.getProperty(PROPIEDAD_MODO, MODO_MYSQL));
 
     private DaoFactory() {
     }
@@ -77,9 +77,9 @@ public final class DaoFactory {
     }
 
     private static Daos enMySql() {
-        ConexionBd conexion = ConexionBd.cargar(
-                Path.of(System.getProperty(PROPIEDAD_CONFIGURACION, ARCHIVO_CONFIGURACION))
-        );
+        String indicado = System.getProperty(PROPIEDAD_CONFIGURACION);
+        Path archivo = indicado == null ? ArchivoConfiguracion.ubicar("backend") : Path.of(indicado);
+        ConexionBd conexion = ConexionBd.cargar(archivo);
         return new Daos(
                 new DaoMySqlFuncionario(conexion),
                 new DaoMySqlAdministrador(conexion),

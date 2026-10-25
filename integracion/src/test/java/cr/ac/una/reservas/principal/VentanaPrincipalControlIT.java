@@ -1,5 +1,6 @@
 package cr.ac.una.reservas.principal;
 
+import cr.ac.una.reservas.persistence.falso.ModoMemoria;
 import cr.ac.una.reservas.autenticacion.SesionControl;
 import cr.ac.una.reservas.funcionario.Funcionario;
 import cr.ac.una.reservas.funcionario.FuncionarioService;
@@ -19,6 +20,10 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class VentanaPrincipalControlIT {
+    static {
+        ModoMemoria.activar();
+    }
+
 
     private static ServidorBackend servidor;
     private static ConexionBackend conexion;

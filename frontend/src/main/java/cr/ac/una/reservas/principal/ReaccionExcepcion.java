@@ -55,16 +55,22 @@ public final class ReaccionExcepcion {
         ejecutarEnVistaUnaVez(accion);
     }
 
+    public static void sesionTerminada(Frame ventana, String mensaje) {
+        if (volverALogin == null) {
+            return;
+        }
+        volverALoginConAviso(ventana, "Sesión terminada", mensaje);
+    }
+
     private static void sesionNoIniciada(Frame ventana) {
+        volverALoginConAviso(ventana, "Sesión no iniciada", "Debe iniciar sesión para continuar.");
+    }
+
+    private static void volverALoginConAviso(Frame ventana, String titulo, String mensaje) {
         ejecutarEnVistaUnaVez(() -> {
             SesionControl.obtenerInstancia().cerrarSesion();
             volverALogin.run();
-            Popup.mostrarAviso(
-                    ventana,
-                    Popup.Tipo.ERROR,
-                    "Sesión no iniciada",
-                    "Debe iniciar sesión para continuar."
-            );
+            Popup.mostrarAviso(ventana, Popup.Tipo.ERROR, titulo, mensaje);
         });
     }
 

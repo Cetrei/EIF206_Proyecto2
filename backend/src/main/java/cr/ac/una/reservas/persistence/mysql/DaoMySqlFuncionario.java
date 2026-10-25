@@ -15,6 +15,8 @@ public class DaoMySqlFuncionario extends DaoMySqlBase<Funcionario, String> imple
             "SELECT u.id, u.clave, f.nombre, f.telefono FROM usuario u JOIN funcionario f ON f.id = u.id";
     private static final String INSERTAR_DETALLE = "INSERT INTO funcionario (id, nombre, telefono) VALUES (?, ?, ?)";
     private static final String ELIMINAR_DETALLE = "DELETE FROM funcionario WHERE id = ?";
+    private static final String ELIMINAR_RESERVAS_CANCELADAS =
+            "DELETE FROM reserva WHERE id_funcionario = ? AND estado = 'CANCELADA'";
 
     public DaoMySqlFuncionario(ConexionBd conexion) {
         super(conexion);
@@ -38,6 +40,7 @@ public class DaoMySqlFuncionario extends DaoMySqlBase<Funcionario, String> imple
 
     @Override
     public boolean eliminar(String id) {
+        ejecutar(ELIMINAR_RESERVAS_CANCELADAS, sentencia -> sentencia.setString(1, id));
         ejecutar(ELIMINAR_DETALLE, sentencia -> sentencia.setString(1, id));
         return super.eliminar(id);
     }

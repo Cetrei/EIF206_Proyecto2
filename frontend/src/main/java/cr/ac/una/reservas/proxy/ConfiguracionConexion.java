@@ -1,6 +1,7 @@
 package cr.ac.una.reservas.proxy;
 
 import cr.ac.una.reservas.excepcion.ConexionException;
+import cr.ac.una.reservas.util.ArchivoConfiguracion;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,12 +10,11 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 public record ConfiguracionConexion(String host, int puerto) {
-    private static final String ARCHIVO = "config.properties";
     private static final String HOST_POR_DEFECTO = "localhost";
     private static final int PUERTO_POR_DEFECTO = 5050;
 
     public static ConfiguracionConexion cargar() {
-        Path archivo = Path.of(ARCHIVO);
+        Path archivo = ArchivoConfiguracion.ubicar("frontend");
         if (!Files.exists(archivo)) {
             return new ConfiguracionConexion(HOST_POR_DEFECTO, PUERTO_POR_DEFECTO);
         }
