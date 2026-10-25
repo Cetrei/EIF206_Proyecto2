@@ -1,0 +1,44 @@
+name: Entrega
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Pruebas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          xvfb-run -a mvn -B verify
+
+      - name: Armar el zip
+        run: |
+          mkdir dist
+          git archive --format=zip --prefix=EIF206_Proyecto2/ -o dist/EIF206_Proyecto2.zip HEAD
+
+      - name: Comprobar que el zip compila desde cero
+        run: |
+          mkdir comprobar
+          unzip -q dist/EIF206_Proyecto2.zip -d comprobar
+          cd comprobar/EIF206_Proyecto2
+          mvn -B -DskipTests package
+          test -f backend/target/backend-1.0-SNAPSHOT.jar
+          test -f frontend/target/frontend-1.0-SNAPSHOT.jar
+          test -f base_datos.sql
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EIF206_Proyecto2
+          path: dist/EIF206_Proyecto2.zip

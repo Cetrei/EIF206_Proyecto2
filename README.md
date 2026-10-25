@@ -50,7 +50,7 @@ mvn verify
 3. Arriba a la derecha aparecen las configuraciones `MainBackend` y `Frontend` (carpeta `.run`). Elegir `MainBackend` y pulsar Run.
 4. Elegir `Frontend` y pulsar Run. Se puede pulsar varias veces para abrir mas Frontend.
 
-Si no aparecen, las clases estan en `backend/src/main/java/cr/ac/una/reservas/backend/MainBackend.java` y `frontend/src/main/java/cr/ac/una/reservas/Main.java`: abrir cada archivo y pulsar el triangulo verde junto a `main`.
+Si no aparecen, las clases estan en `backend/src/main/java/cr/ac/una/reservas/backend/MainBackend.java` y `frontend/src/main/java/cr/ac/una/reservas/Main.java`
 
 ## Usuarios
 `admin` / `123` (administrador). 
