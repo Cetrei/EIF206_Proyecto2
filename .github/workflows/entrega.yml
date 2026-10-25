@@ -19,7 +19,7 @@ jobs:
           cache: maven
 
       - name: Pruebas
-        timeout-minutes: 12
+        timeout-minutes: 6
         run: |
           sudo apt-get update
           sudo apt-get install -y xvfb openbox
@@ -28,7 +28,7 @@ jobs:
           sleep 3
           openbox &
           sleep 2
-          (sleep 200; echo '=== volcado de hilos ==='; for p in $(pgrep -f surefirebooter); do jstack $p; done) &
+          (sleep 100; echo '=== volcado de hilos ==='; jps -l; for p in $(jps -q); do echo "--- pid $p"; jstack $p | grep -A25 '"main"\|AWT-EventQueue\|AWT-XAWT'; done) &
           vigilante=$!
           set +e
           mvn -B verify
