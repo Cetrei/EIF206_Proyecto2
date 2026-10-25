@@ -8,6 +8,7 @@ on:
 jobs:
   zip:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -18,10 +19,22 @@ jobs:
           cache: maven
 
       - name: Pruebas
+        timeout-minutes: 12
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
-          xvfb-run -a mvn -B verify
+          sudo apt-get install -y xvfb openbox
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1280x1024x24 &
+          sleep 3
+          openbox &
+          sleep 2
+          (sleep 200; echo '=== volcado de hilos ==='; for p in $(pgrep -f surefirebooter); do jstack $p; done) &
+          vigilante=$!
+          set +e
+          mvn -B verify
+          estado=$?
+          kill $vigilante 2>/dev/null
+          exit $estado
 
       - name: Armar el zip
         run: |
