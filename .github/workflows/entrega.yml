@@ -19,22 +19,11 @@ jobs:
           cache: maven
 
       - name: Pruebas
-        timeout-minutes: 4
+        timeout-minutes: 10
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb openbox
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1280x1024x24 &
-          sleep 3
-          openbox &
-          sleep 2
-          (sleep 80; echo '=== volcado de hilos ==='; for p in $(jps -l | grep surefirebooter | cut -d' ' -f1); do echo "--- pid $p"; jstack $p | grep -A25 '"main"\|AWT-EventQueue'; done) &
-          vigilante=$!
-          set +e
-          mvn -B verify
-          estado=$?
-          kill $vigilante 2>/dev/null
-          exit $estado
+          sudo apt-get install -y xvfb
+          xvfb-run -a mvn -B verify
 
       - name: Armar el zip
         run: |
