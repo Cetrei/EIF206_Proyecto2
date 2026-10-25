@@ -8,14 +8,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import java.awt.Container;
-import java.awt.Dialog;
 import java.awt.Frame;
-import java.awt.Window;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,28 +75,7 @@ class LoginControlTest {
     private static void invocarConfirmarCambioClave(LoginControl control, DialogoCambioClave dialogo) throws Exception {
         Method metodo = LoginControl.class.getDeclaredMethod("confirmarCambioClave", DialogoCambioClave.class);
         metodo.setAccessible(true);
-        AtomicBoolean activo = new AtomicBoolean(true);
-        Thread cierreDeDialogos = new Thread(() -> {
-            while (activo.get()) {
-                for (Window ventana : Window.getWindows()) {
-                    if (ventana instanceof Dialog dialogoAbierto && dialogoAbierto.isModal() && dialogoAbierto.isVisible()) {
-                        SwingUtilities.invokeLater(dialogoAbierto::dispose);
-                    }
-                }
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException interrupcion) {
-                    return;
-                }
-            }
-        });
-        cierreDeDialogos.setDaemon(true);
-        cierreDeDialogos.start();
-        try {
-            metodo.invoke(control, dialogo);
-        } finally {
-            activo.set(false);
-        }
+        metodo.invoke(control, dialogo);
     }
 
     private static JTextField campoTexto(Container contenedor) {
