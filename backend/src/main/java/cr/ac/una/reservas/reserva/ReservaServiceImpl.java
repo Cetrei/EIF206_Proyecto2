@@ -236,7 +236,17 @@ public class ReservaServiceImpl implements ReservaService {
         }
         if (datos.getIdsCategoriasRequeridas() == null || datos.getIdsCategoriasRequeridas().isEmpty()) {
             throw new ReglaDeNegocioException("Debe seleccionar al menos una categoría de recurso.");
+
         }
+
+        for (Integer idCategoria : datos.getIdsCategoriasRequeridas()) {
+            if (idCategoria == null || categoriaDao.buscarPorId(idCategoria).isEmpty()) {
+                throw new ReglaDeNegocioException(
+                        "La categoria de recurso " + idCategoria + " no existe."
+                );
+            }
+        }
+
     }
 
     private Optional<Recurso> buscarPrimerRecursoDisponible(
