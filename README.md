@@ -28,7 +28,7 @@ Frontend (una terminal por cada uno):
 java -cp frontend/target/frontend-1.0-SNAPSHOT.jar:common/target/common-1.0-SNAPSHOT.jar:$HOME/.m2/repository/com/intellij/forms_rt/7.0.3/forms_rt-7.0.3.jar cr.ac.una.reservas.Main
 ```
 
-**Windows** (Simbolo del sistema, desde la raiz)
+**Windows** (CMD desde la raiz)
 
 Backend:
 ```
@@ -48,7 +48,9 @@ mvn verify
 1. `File > Open` y elegir el `pom.xml` de la raiz.
 2. `Settings > Editor > GUI Designer > Generate GUI into: Java source code`.
 3. Ejecutar `cr.ac.una.reservas.backend.MainBackend` (modulo `backend`).
-4. Ejecutar `cr.ac.una.reservas.Main` (modulo `frontend`). Para abrir varios, activar `Allow multiple instances` en su configuracion de ejecucion.
+4. Ejecutar `cr.ac.una.reservas.Main` (modulo `frontend`). 
+> Para abrir varios: `Run > Edit Configurations...`, elegir `Main`, `Modify options` y marcar `Allow multiple instances`.
 
 ## Usuarios
-`admin` / `123` (administrador). `111`, `222` y `123` con clave igual a su ID (funcionarios).
+`admin` / `123` (administrador). 
+`111`, `222` y `123` con clave igual a su ID (funcionarios).
