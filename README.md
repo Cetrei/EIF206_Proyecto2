@@ -11,7 +11,7 @@
 
 **Pruebas**: `mvn verify`
 
-## IntelliJ IDEA
+## Ejecutars
 1. `File > Open` y elegir el `pom.xml` de la raiz.
 2. `Settings > Editor > GUI Designer > Generate GUI into: Java source code`.
 3. Arriba a la derecha elegir `MainBackend` y pulsar Run.
