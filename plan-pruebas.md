@@ -21,7 +21,8 @@ Durante el proceso se desarrollaron pruebas adicionales, se identificaron errore
 Para organizar los casos de prueba se utilizan las siguientes clasificaciones:
 
 - **Automática – Aprobada:** existe una prueba automatizada que se ejecutó correctamente.
-- **Automática – Pendiente:** se identificó un caso que todavía necesita una prueba adicional o su habilitación.
+- **Automática – Deshabilitada:** existe una prueba preparada que permanece deshabilitada temporalmente.
+- **Automática – Pendiente:** se identificó un caso que todavía necesita una prueba adicional.
 - **Manual – Pendiente:** el caso debe comprobarse directamente utilizando la aplicación.
 
 ## 3. Casos de prueba por funcionalidad
@@ -53,7 +54,7 @@ Para organizar los casos de prueba se utilizan las siguientes clasificaciones:
 - **CP-20 | Automática – Aprobada:** Comprobar que cancelar una reserva libera el recurso para otro usuario. `ReservaCasosAdicionalesTest`.
 - **CP-21 | Automática – Aprobada:** Permitir dos reservas simultáneas cuando existen dos recursos de la misma categoría. `ReservaCasosAdicionalesTest`.
 - **CP-22 | Automática – Aprobada:** Comprobar que cada funcionario obtiene sus propias reservas. `ReservaCasosAdicionalesTest`.
-- **CP-23 | Automática – Aprobada:** Comprobar que solamente una de 20 solicitudes simultáneas obtiene el mismo recurso y horario. `ReservaConcurrenciaTest`.
+- **CP-23 | Automática – Deshabilitada:** Comprobar que solamente una de 20 solicitudes simultáneas obtiene el mismo recurso y horario. `ReservaConcurrenciaTest`. Preparada con DAO en memoria y `@Disabled` hasta recibir autorización del núcleo.
 - **CP-24 | Automática – Aprobada:** Verificar que el sistema rechace reservas con categorías inexistentes y no almacene información inválida. `ReservaValidacionCategoriaTest`.
 - **CP-25 | Manual – Pendiente:** Comprobar la creación, modificación y cancelación de reservas desde la interfaz gráfica.
 
@@ -183,7 +184,7 @@ En la primera ejecución, la prueba falló porque el servicio aceptaba la reserv
 
 Después de corregir la validación en `ReservaServiceImpl`, se adaptó la prueba para comprobar que el servicio genere una `ReglaDeNegocioException` y que no se almacene ninguna reserva inválida.
 
-La última ejecución de Maven terminó con `BUILD SUCCESS`, confirmando que la prueba corregida no impide completar el ciclo de verificación.
+En la última ejecución de Maven, esta prueba terminó correctamente.
 
 ### 5.3. Resumen de las pruebas adicionales
 
@@ -197,55 +198,57 @@ Las pruebas se realizaron utilizando DAO falsos en memoria y no requieren una co
 
 ## 6. Prueba de concurrencia
 
-El repositorio contiene `ReservaConcurrenciaTest.java`, que utiliza 20 hilos para intentar reservar simultáneamente el mismo recurso durante el mismo horario.
+Se verificó que `ReservaConcurrenciaTest` utiliza 20 hilos para intentar reservar el mismo recurso durante el mismo horario.
 
-Esta prueba permite comprobar que solamente una solicitud consiga crear la reserva y que no se produzcan asignaciones duplicadas del recurso.
+La prueba utiliza DAO en memoria y construye `ReservaServiceImpl` mediante la inyección de dependencias por constructor.
 
-La clase utiliza `@RepeatedTest(5)`, por lo que ejecuta el mismo escenario cinco veces.
+Su objetivo es comprobar que solamente una solicitud consiga realizar la reserva exitosamente y que no se generen reservas duplicadas.
 
-Durante la ejecución registrada de Maven, las cinco repeticiones finalizaron correctamente.
+En ejecuciones anteriores, las cinco repeticiones de la prueba terminaron correctamente.
 
-La asignación de trabajo indicaba mantener la prueba con `@Disabled` hasta recibir autorización del núcleo. Sin embargo, en la versión revisada del repositorio se encontraba habilitada.
+Posteriormente, se agregó `@Disabled` a la clase para cumplir con la indicación de mantenerla deshabilitada hasta recibir autorización del núcleo.
 
-Este comportamiento debe coordinarse con los integrantes responsables de la lógica principal para determinar si la prueba permanecerá activa durante la entrega final.
+Se ejecutó nuevamente Maven y se obtuvo `BUILD SUCCESS`. La prueba apareció como omitida, confirmando que la anotación fue aplicada correctamente.
 
-No se realizaron modificaciones directas a la clase de concurrencia existente.
+Cuando el núcleo autorice su ejecución, se podrá retirar `@Disabled` y volver a ejecutar la prueba para comprobar la concurrencia.
+
+**Estado: IMPLEMENTADA, VERIFICADA PREVIAMENTE Y DESHABILITADA.**
 
 ## 7. Resultados de la ejecución
 
-Se utilizó IntelliJ IDEA 2026.2 con Java 26.0.2 y Maven para realizar las pruebas del proyecto. La configuración de compilación del proyecto utiliza Java 21.
+Se utilizó IntelliJ IDEA 2026.2 con Java 26.0.2 y Maven para realizar las pruebas del proyecto. La configuración de compilación utiliza Java 21.
 
 Se ejecutó el ciclo `verify` de Maven desde la raíz del repositorio.
 
-### 7.1. Resultados detallados registrados
+### 7.1. Resultados de la última ejecución
 
-En la ejecución completa documentada antes de agregar la última prueba de validación de categorías, se obtuvieron los siguientes resultados:
-
-| Módulo | Pruebas exitosas | Pruebas omitidas | Fallos |
+| Módulo | Pruebas aprobadas | Omitidas | Fallos |
 |---|---:|---:|---:|
 | common | 59 | 0 | 0 |
-| backend | 153 | 6 | 0 |
+| backend | 149 | 7 | 0 |
 | frontend | 32 | 0 | 0 |
 | integracion | 22 | 0 | 0 |
-| **Total** | **266** | **6** | **0** |
+| **Total** | **262** | **7** | **0** |
 
 **Resultado general: BUILD SUCCESS.**
 
-Posteriormente, se agregó la prueba `ReservaValidacionCategoriaTest` y se corrigió la validación de categorías inexistentes.
+Se ejecutaron 262 pruebas satisfactoriamente. No se registraron fallos ni errores.
 
-Después de estos cambios se volvió a ejecutar `verify`, obteniendo nuevamente **BUILD SUCCESS**.
+Las siete pruebas omitidas corresponden a seis pruebas de integración con MySQL y una prueba de concurrencia deshabilitada intencionalmente mediante `@Disabled`.
 
-Al agregar una prueba exitosa, el total esperado es de 267 pruebas aprobadas y 6 omitidas, siempre que no existan otros cambios en el proyecto. El conteo definitivo debe verificarse contra el registro de la última ejecución.
+La prueba `ReservaValidacionCategoriaTest` se ejecutó correctamente después de corregir la validación de categorías inexistentes en `ReservaServiceImpl`.
+
+El resultado confirma que las pruebas habilitadas pueden ejecutarse sin necesitar una base de datos MySQL activa.
 
 ### 7.2. Pruebas de MySQL
 
-Las seis pruebas omitidas corresponden a la clase `DaoMySqlIT`.
+Las seis pruebas omitidas de MySQL corresponden a la clase `DaoMySqlIT`.
 
-Estas pruebas necesitan una base de datos de pruebas con el esquema correspondiente y se omiten cuando el entorno requerido no está disponible.
+Estas pruebas requieren una base de datos de pruebas con el esquema correspondiente y se omiten cuando el entorno necesario no está disponible.
 
-Por esta razón, se comprobó que el proyecto puede completar `mvn verify` sin una conexión activa con MySQL.
+Por esta razón, el proyecto logró completar `mvn verify` sin una conexión activa con MySQL.
 
-Sin embargo, las seis pruebas específicas de persistencia no se consideran aprobadas, ya que no fueron ejecutadas.
+Sin embargo, estas seis pruebas específicas de persistencia no se consideran aprobadas, ya que no fueron ejecutadas.
 
 ### 7.3. Herramientas utilizadas
 
@@ -327,11 +330,15 @@ Se ejecutaron nuevamente las pruebas mediante Maven y el proyecto terminó con `
 
 Se identificó que `ReservaConcurrenciaTest.java` estaba habilitada, aunque en la distribución del trabajo se indicaba utilizar `@Disabled` hasta recibir autorización del núcleo.
 
-La prueba no presentó fallos durante las cinco repeticiones ejecutadas.
+Inicialmente, la prueba se ejecutó cinco veces mediante `@RepeatedTest(5)` y todas las repeticiones finalizaron correctamente.
 
-No se modificó esta clase, ya que corresponde a los archivos existentes que deben conservarse.
+Posteriormente, se agregó la anotación `@Disabled("Pendiente de autorizacion del nucleo")` para cumplir con el requisito establecido.
 
-**Estado: PENDIENTE DE COORDINACIÓN CON EL EQUIPO.**
+Después se ejecutó nuevamente `mvn verify`. La prueba apareció como omitida y el proyecto terminó con `BUILD SUCCESS`.
+
+La lógica de la prueba permanece preparada para su ejecución cuando sea autorizada.
+
+**Estado: IMPLEMENTADA Y DESHABILITADA. PENDIENTE DE AUTORIZACIÓN DEL NÚCLEO.**
 
 ## 9. Pruebas manuales pendientes
 
@@ -361,11 +368,10 @@ Estas verificaciones permanecen pendientes y no se consideran aprobadas hasta qu
 
 - Comunicar al núcleo la corrección realizada en `ReservaServiceImpl`.
 - Comunicar al equipo la actualización de `LoginControlTest`.
-- Confirmar con el núcleo si `ReservaConcurrenciaTest` debe mantenerse habilitada.
+- Confirmar con el núcleo cuándo debe habilitarse `ReservaConcurrenciaTest`.
 - Completar las comprobaciones manuales de la interfaz gráfica.
 - Ejecutar las pruebas específicas de MySQL cuando exista un entorno de pruebas disponible.
-- Revisar el conteo definitivo de pruebas en el último registro de Maven.
-- Ejecutar nuevamente `mvn verify` antes de la entrega definitiva.
+- Ejecutar nuevamente `mvn verify` antes de la entrega definitiva si se realizan nuevos cambios.
 - Mantener los cambios actualizados en GitHub.
 - Preparar el Pull Request final para incorporar las modificaciones al repositorio principal.
 
@@ -377,12 +383,14 @@ También se identificaron y corrigieron dos problemas: una prueba de integració
 
 Las pruebas adicionales permitieron comprobar situaciones relacionadas con disponibilidad de recursos, cancelaciones, horarios, consultas por funcionario y validación de categorías.
 
-La ejecución del proyecto mediante Maven finalizó con `BUILD SUCCESS`, sin fallos en las pruebas automatizadas ejecutadas.
+La prueba de concurrencia se encontraba implementada y había superado sus cinco ejecuciones anteriores. Posteriormente, se deshabilitó temporalmente mediante `@Disabled`, tal como establecía la distribución del trabajo.
 
-Las pruebas de integración con MySQL permanecen pendientes de ejecución en un entorno con la base de datos correspondiente.
+La última ejecución de Maven registró **262 pruebas exitosas, 7 omitidas y ningún fallo ni error**, obteniendo `BUILD SUCCESS`.
+
+Las seis pruebas de integración con MySQL permanecen pendientes de ejecución en un entorno con la base de datos correspondiente.
 
 Asimismo, todavía deben completarse las verificaciones manuales de las diferentes pantallas, principalmente las relacionadas con las alertas asincrónicas y la interacción entre múltiples instancias del Frontend.
 
-Por lo tanto, el trabajo presenta resultados satisfactorios en las pruebas automáticas ejecutadas, mientras que la validación manual y las comprobaciones específicas de base de datos continúan pendientes.
+Por lo tanto, el trabajo presenta resultados satisfactorios en las pruebas automáticas habilitadas, mientras que la validación manual y las comprobaciones específicas de base de datos continúan pendientes.
 
 Las modificaciones realizadas fuera del área originalmente asignada a la Parte B deberán comunicarse al equipo para que sean revisadas antes de incorporarlas al proyecto principal.
