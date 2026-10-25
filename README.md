@@ -47,9 +47,10 @@ mvn verify
 ## IntelliJ IDEA
 1. `File > Open` y elegir el `pom.xml` de la raiz.
 2. `Settings > Editor > GUI Designer > Generate GUI into: Java source code`.
-3. Abrir `MainBackend.java` (modulo `backend`) y pulsar el triangulo verde junto a `main` > `Run 'MainBackend.main()'`.
-4. Abrir `Main.java` (modulo `frontend`) y hacer lo mismo para `Run 'Main.main()'`.
-5. Para abrir varios Frontend: `Run > Edit Configurations...`, elegir `Main` (aparece despues de ejecutarlo una vez), `Modify options` y marcar `Allow multiple instances`.
+3. Arriba a la derecha aparecen las configuraciones `MainBackend` y `Frontend` (carpeta `.run`). Elegir `MainBackend` y pulsar Run.
+4. Elegir `Frontend` y pulsar Run. Se puede pulsar varias veces para abrir mas Frontend.
+
+Si no aparecen, las clases estan en `backend/src/main/java/cr/ac/una/reservas/backend/MainBackend.java` y `frontend/src/main/java/cr/ac/una/reservas/Main.java`: abrir cada archivo y pulsar el triangulo verde junto a `main`.
 
 ## Usuarios
 `admin` / `123` (administrador). 
