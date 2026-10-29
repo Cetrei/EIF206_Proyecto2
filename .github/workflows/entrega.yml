@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   zip:
     runs-on: ubuntu-latest
@@ -44,3 +47,10 @@ jobs:
         with:
           name: EIF206_Proyecto2
           path: dist/EIF206_Proyecto2.zip
+
+      - name: Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete entrega --cleanup-tag --yes || true
+          gh release create entrega dist/EIF206_Proyecto2.zip --target "$GITHUB_SHA" --title "Entrega" --notes "Zip generado desde el commit $GITHUB_SHA"
