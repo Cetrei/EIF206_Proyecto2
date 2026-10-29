@@ -83,6 +83,11 @@ public class LoginPanel implements CambioTemaListener, PropertyChangeListener {
         accionesConfiguradas = true;
     }
 
+    public void setCargando(boolean cargando) {
+        botonIngresarReal.setTexto(cargando ? "Ingresando..." : "Ingresar");
+        botonIngresarReal.setHabilitado(!cargando);
+    }
+
     public void alCambiarClave(Runnable accion) {
         botonCambiarClaveReal.alHacerClick(accion);
     }
@@ -130,14 +135,10 @@ public class LoginPanel implements CambioTemaListener, PropertyChangeListener {
         if (envoltorio != null) {
             envoltorio.setBackground(tema.colorFondoVentana());
         }
-
         VentanaPrincipal.setBackground(tema.colorFondoVentana());
-
         pnlTarjeta.setBackground(tema.colorFondoTarjeta());
         pnlTarjeta.repaint();
-
         LoginEstilo.aplicar(tema, iconTitulo, lblTitulo, lblSubTitulo, lblPiePagina, lblIntegrantes);
-
         VentanaPrincipal.repaint();
     }
 

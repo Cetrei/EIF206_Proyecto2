@@ -27,7 +27,7 @@ class LoginControlTest {
     }
 
     @Test
-    void recortaEspaciosDelIdAlIngresar() {
+    void recortaEspaciosDelIdAlIngresar() throws Exception {
         AdministradorDaoFalso administradorDao = new AdministradorDaoFalso();
         administradorDao.insertar(new Administrador(ID_ADMIN, CLAVE_ADMIN));
         AutenticacionService autenticacionService = new AutenticacionServiceImpl(administradorDao, new FuncionarioDaoFalso());
@@ -41,6 +41,7 @@ class LoginControlTest {
         campoClave(vista.obtenerPanel()).setText(CLAVE_ADMIN);
         campoClave(vista.obtenerPanel()).postActionEvent();
 
+        esperarSesion();
         assertTrue(SesionControl.obtenerInstancia().haySesionActiva());
         assertNull(modelo.getMensajeError());
     }
@@ -64,6 +65,13 @@ class LoginControlTest {
         invocarConfirmarCambioClave(control, dialogo);
 
         assertEquals("nueva-clave", administradorDao.buscarPorId(ID_ADMIN).get().getClave());
+    }
+
+    private static void esperarSesion() throws InterruptedException {
+        long limite = System.currentTimeMillis() + 5000;
+        while (!SesionControl.obtenerInstancia().haySesionActiva() && System.currentTimeMillis() < limite) {
+            Thread.sleep(25);
+        }
     }
 
     private static void asignarCampo(DialogoCambioClave dialogo, String nombreCampo, String valor) throws Exception {

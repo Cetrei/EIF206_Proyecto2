@@ -15,6 +15,6 @@ public class LoginModel extends AbstractModel {
     public void setMensajeError(String nuevo) {
         String anterior = this.mensajeError;
         this.mensajeError = nuevo;
-        notificarCambio(PROP_MENSAJE_ERROR, anterior, nuevo);
+        notificarCambioForzado(PROP_MENSAJE_ERROR, anterior, nuevo);
     }
 }

@@ -70,6 +70,11 @@ public class BotonPrimario implements CambioTemaListener {
         btnPrimario.setText(texto);
     }
 
+    public void setHabilitado(boolean habilitado) {
+        btnPrimario.setEnabled(habilitado);
+        btnPrimario.setCursor(Cursor.getPredefinedCursor(habilitado ? Cursor.DEFAULT_CURSOR : Cursor.WAIT_CURSOR));
+    }
+
     public void setIcono(Icono icono) {
         IconoAplicador.aplicar(lblIcon, icono, 13f, GestorTema.obtenerInstancia().temaActivo().colorTexto());
     }
