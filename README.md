@@ -5,9 +5,13 @@
 - Santiago Hernandez Chaves
 
 ## Setup
-**Version JDK**: ```26.0.2``` (minimo 21)
+**Version JDK**: 
+```26.0.2``` (minimo 21)
 
-**Base de datos**: MySQL, crear con `base_datos.sql`. Las credenciales se configuran en `backend/config.properties` y la direccion del Backend en `frontend/config.properties`.
+**Base de datos**: 
+MySQL (solo debe estar encendido). 
+El Backend pide las credenciales por consola si no las encuentra, crea las tablas con `base_datos.sql` y espera a la base si esta apagada. La consola del Backend indica cada paso y cada error. 
+La direccion del Backend para el Frontend se cambia en `frontend/config.properties` (por defecto `localhost:5050`).
 
 **Pruebas**: `mvn verify`
 
