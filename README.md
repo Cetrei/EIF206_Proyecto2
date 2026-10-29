@@ -11,11 +11,13 @@
 
 **Pruebas**: `mvn verify`
 
-## Ejecutars
+## Ejecutar
+El proyecto ya esta configurado pero si generara problemas, en inteliji
 1. `File > Open` y elegir el `pom.xml` de la raiz.
 2. `Settings > Editor > GUI Designer > Generate GUI into: Java source code`.
 3. Arriba a la derecha elegir `MainBackend` y pulsar Run.
 4. Luego elegir `Frontend` y pulsar Run. Se puede repetir para abrir mas de un Frontend.
+> Para mayor referencia, el donde ejecutar frontend y backend facilmente se muestra en [Foto de Guia](./DondeEjecutar.png)
 
 ## Usuarios
 `admin` / `123` (administrador). 
