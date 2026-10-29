@@ -1,11 +1,17 @@
 package cr.ac.una.reservas.backend;
 
+import cr.ac.una.reservas.persistence.DaoFactory;
+import cr.ac.una.reservas.persistence.mysql.ConexionBd;
+import cr.ac.una.reservas.servidor.Despachador;
 import cr.ac.una.reservas.servidor.RutasBackend;
 import cr.ac.una.reservas.servidor.ServidorBackend;
 import cr.ac.una.reservas.util.ArchivoConfiguracion;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -17,14 +23,48 @@ public final class MainBackend {
     }
 
     public static void main(String[] args) throws IOException {
-        ServidorBackend servidor = new ServidorBackend(RutasBackend.crearDespachador());
+        boolean mysql = usaMySql();
+        ConsolaBackend consola = new ConsolaBackend(new BufferedReader(new InputStreamReader(System.in)), System.out);
+        if (mysql && !consola.asegurarConfiguracion()) {
+            System.exit(1);
+            return;
+        }
+        int puerto = leerPuerto();
+        Despachador despachador = RutasBackend.crearDespachador();
+        ServidorBackend servidor = new ServidorBackend(despachador);
         RutasBackend.instalarDifusor(servidor);
+        try {
+            servidor.iniciar(puerto);
+        } catch (BindException excepcion) {
+            System.err.println(Ansi.error("No se pudo iniciar el Backend: el puerto " + puerto
+                    + " ya esta en uso. Cierre el otro Backend o cambie 'puerto' en config.properties."));
+            System.exit(1);
+            return;
+        }
         Runtime.getRuntime().addShutdownHook(new Thread(servidor::close));
-        servidor.iniciar(leerPuerto());
+        System.out.println(Ansi.exito("Backend escuchando en el puerto " + puerto));
+        if (mysql) {
+            vigilarBaseDatos(despachador, servidor, consola);
+        }
+    }
+
+    private static void vigilarBaseDatos(Despachador despachador, ServidorBackend servidor, ConsolaBackend consola) {
+        ConexionBd conexion = DaoFactory.obtenerConexionMySql();
+        MonitorBaseDatos monitor = new MonitorBaseDatos(
+                conexion, System.out, servidor::terminarTodasLasSesiones, consola::mostrarOpciones, consola::libre
+        );
+        despachador.baseDisponible(monitor::disponible);
+        consola.atenderOpciones(conexion, monitor::verificarAhora);
+        monitor.iniciar();
+    }
+
+    private static boolean usaMySql() {
+        return DaoFactory.MODO_MYSQL.equalsIgnoreCase(System.getProperty(DaoFactory.PROPIEDAD_MODO, DaoFactory.MODO_MYSQL).trim());
     }
 
     private static int leerPuerto() throws IOException {
-        Path archivo = ArchivoConfiguracion.ubicar("backend");
+        String indicado = System.getProperty(DaoFactory.PROPIEDAD_CONFIGURACION);
+        Path archivo = indicado != null ? Path.of(indicado) : ArchivoConfiguracion.ubicar("backend");
         if (!Files.exists(archivo)) {
             return PUERTO_POR_DEFECTO;
         }

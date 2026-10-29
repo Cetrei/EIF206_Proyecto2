@@ -34,9 +34,15 @@ public final class DaoFactory {
     ) {
     }
 
+    private static ConexionBd conexionMySql;
+
     private static final Daos DAOS = crear(System.getProperty(PROPIEDAD_MODO, MODO_MYSQL));
 
     private DaoFactory() {
+    }
+
+    public static ConexionBd obtenerConexionMySql() {
+        return conexionMySql;
     }
 
     public static FuncionarioDao obtenerFuncionarioDao() {
@@ -80,6 +86,7 @@ public final class DaoFactory {
         String indicado = System.getProperty(PROPIEDAD_CONFIGURACION);
         Path archivo = indicado == null ? ArchivoConfiguracion.ubicar("backend") : Path.of(indicado);
         ConexionBd conexion = ConexionBd.cargar(archivo);
+        conexionMySql = conexion;
         return new Daos(
                 new DaoMySqlFuncionario(conexion),
                 new DaoMySqlAdministrador(conexion),

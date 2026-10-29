@@ -38,6 +38,14 @@ public final class ServidorBackend implements AutoCloseable {
         }
     }
 
+    public void terminarTodasLasSesiones(String mensaje) {
+        for (ConexionCliente cliente : clientes) {
+            if (cliente.tieneSesion()) {
+                cliente.terminarSesion(new SesionTerminada(mensaje));
+            }
+        }
+    }
+
     public void iniciar(int puerto) throws IOException {
         servidor = new ServerSocket(puerto);
         hilosDeClientes = Executors.newVirtualThreadPerTaskExecutor();

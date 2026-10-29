@@ -13,6 +13,7 @@ import cr.ac.una.reservas.protocol.Rutas;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,7 +26,11 @@ public final class Despachador {
             clave(Accion.PUT, Rutas.CLAVE)
     );
 
+    private static final Set<String> RUTAS_SIN_BASE = Set.of(clave(Accion.DELETE, Rutas.SESION));
+
     private static final String MENSAJE_SIN_PERMISO = "No tiene permiso para realizar esta operación.";
+    private static final String MENSAJE_SERVICIO_NO_DISPONIBLE =
+            "El servicio no está disponible por el momento. Intente de nuevo en unos minutos.";
     private static final Set<String> RUTAS_SOLO_ADMINISTRADOR = Set.of(
             clave(Accion.GET, Rutas.FUNCIONARIOS),
             clave(Accion.GET, Rutas.FUNCIONARIOS_POR_ID),
@@ -47,7 +52,12 @@ public final class Despachador {
     );
 
     private final Map<String, Ruta> rutas = new HashMap<>();
+    private volatile BooleanSupplier baseDisponible = () -> true;
     private volatile Consumer<String> alEliminarFuncionario = idFuncionario -> { };
+
+    public void baseDisponible(BooleanSupplier consulta) {
+        this.baseDisponible = consulta;
+    }
 
     public void alEliminarFuncionario(Consumer<String> accion) {
         this.alEliminarFuncionario = accion;
@@ -68,6 +78,11 @@ public final class Despachador {
             REGISTRO.warning("Ruta desconocida: " + clave);
             return Respuesta.fracaso(peticion.getId(), new ErrorInternoException());
         }
+        if (!baseDisponible.getAsBoolean() && !RUTAS_SIN_BASE.contains(clave)) {
+            return Respuesta.fracaso(
+                    peticion.getId(), sinRastro(new ErrorInternoException(MENSAJE_SERVICIO_NO_DISPONIBLE))
+            );
+        }
         if (!sesion.tieneSesion() && !RUTAS_SIN_SESION.contains(clave)) {
             return Respuesta.fracaso(
                     peticion.getId(),
@@ -83,7 +98,7 @@ public final class Despachador {
             return Respuesta.exito(peticion.getId(), ruta.ejecutar(peticion.getCuerpo(), sesion));
         } catch (PersistenciaException excepcion) {
             REGISTRO.log(Level.SEVERE, "Falla de persistencia en " + clave, excepcion);
-            return Respuesta.fracaso(peticion.getId(), new ErrorInternoException());
+            return Respuesta.fracaso(peticion.getId(), new ErrorInternoException(MENSAJE_SERVICIO_NO_DISPONIBLE));
         } catch (ReservaAppException excepcion) {
             return Respuesta.fracaso(peticion.getId(), sinRastro(excepcion));
         } catch (RuntimeException excepcion) {

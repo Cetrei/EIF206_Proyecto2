@@ -8,4 +8,8 @@ public class ErrorInternoException extends ReservaAppException {
     public ErrorInternoException() {
         super(MENSAJE_GENERICO);
     }
+
+    public ErrorInternoException(String mensaje) {
+        super(mensaje);
+    }
 }
